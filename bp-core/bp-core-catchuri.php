@@ -37,7 +37,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
  *
  */
 function bp_core_set_uri_globals() {
-	global $bp, $current_blog, $wpdb;
+	global $bp, $current_blog;
 
 	// Don't catch URIs on non-root blogs unless multiblog mode is on
 	if ( !bp_is_root_blog() && !bp_is_multiblog_mode() )
@@ -67,7 +67,7 @@ function bp_core_set_uri_globals() {
 	$bp_uri = explode( '/', $path );
 
 	// Loop and remove empties
-	foreach ( (array)$bp_uri as $key => $uri_chunk ) {
+	foreach ( (array) $bp_uri as $key => $uri_chunk ) {
 		if ( empty( $bp_uri[$key] ) ) {
 			unset( $bp_uri[$key] );
 		}
@@ -129,7 +129,7 @@ function bp_core_set_uri_globals() {
 	// If a component is set to the front page, force its name into $bp_uri
 	// so that $current_component is populated (unless a specific WP post is being requested
 	// via a URL parameter, usually signifying Preview mode)
-	if ( 'page' == get_option( 'show_on_front' ) && get_option( 'page_on_front' ) && empty( $bp_uri ) && empty( $_GET['p'] ) ) {
+	if ( 'page' == get_option( 'show_on_front' ) && get_option( 'page_on_front' ) && empty( $bp_uri ) && empty( $_GET['p'] ) && empty( $_GET['page_id'] ) ) {
 		$post = get_post( get_option( 'page_on_front' ) );
 		if ( !empty( $post ) ) {
 			$bp_uri[0] = $post->post_name;
@@ -554,7 +554,7 @@ function bp_redirect_canonical() {
 		}
 					
 		if ( !empty( $bp->redirect_stack['action_variables'] ) ) {
-			foreach( (array)$bp->redirect_stack['action_variables'] as $av ) {
+			foreach( (array) $bp->redirect_stack['action_variables'] as $av ) {
 				$url_stack[0] = trailingslashit( $url_stack[0] . $av );	
 			}
 		}

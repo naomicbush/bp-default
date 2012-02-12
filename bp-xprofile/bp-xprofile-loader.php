@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BuddyPress XProfile Loader
  *
@@ -6,7 +7,7 @@
  * groups of fields for users to enter information about themselves.
  *
  * @package BuddyPress
- * @subpackage XProfile Core
+ * @subpackage XProfileLoader
  */
 
 // Exit if accessed directly
@@ -106,7 +107,8 @@ class BP_XProfile_Component extends BP_Component {
 	 * @global obj $bp
 	 */
 	function setup_nav() {
-		global $bp;
+
+		$sub_nav = array();
 
 		// Add 'Profile' to the main navigation
 		$main_nav = array(
@@ -118,7 +120,7 @@ class BP_XProfile_Component extends BP_Component {
 			'item_css_id'         => $this->id
 		);
 
-		$profile_link = trailingslashit( $bp->loggedin_user->domain . $this->slug );
+		$profile_link = trailingslashit( bp_loggedin_user_domain() . $this->slug );
 
 		// Add the subnav items to the profile
 		$sub_nav[] = array(
@@ -168,7 +170,7 @@ class BP_XProfile_Component extends BP_Component {
 		if ( is_user_logged_in() ) {
 
 			// Profile link
-			$profile_link = trailingslashit( $bp->loggedin_user->domain . $this->slug );
+			$profile_link = trailingslashit( bp_loggedin_user_domain() . $this->slug );
 
 			// Add the "Profile" sub menu
 			$wp_admin_nav[] = array(
@@ -224,7 +226,7 @@ class BP_XProfile_Component extends BP_Component {
 					'type'    => 'thumb',
 					'alt'	  => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
 				) );
-				$bp->bp_options_title = $bp->displayed_user->fullname;
+				$bp->bp_options_title = bp_get_displayed_user_fullname();
 			}
 		}
 

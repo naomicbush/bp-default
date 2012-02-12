@@ -1,4 +1,12 @@
 <?php
+
+/**
+ * BuddyPress Settings Loader
+ *
+ * @package BuddyPress
+ * @subpackage SettingsLoader
+ */
+
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
@@ -44,7 +52,6 @@ class BP_Settings_Component extends BP_Component {
 	 * @global obj $bp
 	 */
 	function setup_globals() {
-		global $bp;
 
 		// Define a slug, if necessary
 		if ( !defined( 'BP_SETTINGS_SLUG' ) )
@@ -67,6 +74,9 @@ class BP_Settings_Component extends BP_Component {
 	function setup_nav() {
 		global $bp;
 
+		// Define local variable
+		$sub_nav = array();
+
 		// Add the settings navigation item
 		$main_nav = array(
 			'name'                    => __( 'Settings', 'buddypress' ),
@@ -78,10 +88,10 @@ class BP_Settings_Component extends BP_Component {
 		);
 
 		// Determine user to use
-		if ( isset( $bp->displayed_user->domain ) )
-			$user_domain = $bp->displayed_user->domain;
-		elseif ( isset( $bp->loggedin_user->domain ) )
-			$user_domain = $bp->loggedin_user->domain;
+		if ( bp_displayed_user_domain() )
+			$user_domain = bp_displayed_user_domain();
+		elseif ( bp_loggedin_user_domain() )
+			$user_domain = bp_loggedin_user_domain();
 		else
 			return;
 
@@ -140,7 +150,7 @@ class BP_Settings_Component extends BP_Component {
 		if ( is_user_logged_in() ) {
 
 			// Setup the logged in user variables
-			$user_domain   = $bp->loggedin_user->domain;
+			$user_domain   = bp_loggedin_user_domain();
 			$settings_link = trailingslashit( $user_domain . $this->slug );
 
 			// Add main Settings menu

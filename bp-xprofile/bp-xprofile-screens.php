@@ -1,8 +1,14 @@
 <?php
-/*******************************************************************************
+
+/**
+ * BuddyPress XProfile Screens
+ *
  * Screen functions are the controllers of BuddyPress. They will execute when
  * their specific URL is caught. They will first save or manipulate data using
  * business functions, then pass on the user to a template file.
+ *
+ * @package BuddyPress
+ * @subpackage XProfileScreens
  */
 
 // Exit if accessed directly
@@ -45,6 +51,9 @@ function xprofile_screen_edit_profile() {
 		return;
 	}
 
+	// No errors
+	$errors = false;
+
 	// Check to see if any new information has been submitted
 	if ( isset( $_POST['field_ids'] ) ) {
 
@@ -53,7 +62,7 @@ function xprofile_screen_edit_profile() {
 
 		// Check we have field ID's
 		if ( empty( $_POST['field_ids'] ) )
-			bp_core_redirect( trailingslashit( $bp->displayed_user->domain . $bp->profile->slug . '/edit/group/' . bp_action_variable( 1 ) ) );
+			bp_core_redirect( trailingslashit( bp_displayed_user_domain() . $bp->profile->slug . '/edit/group/' . bp_action_variable( 1 ) ) );
 
 		// Explode the posted field IDs into an array so we know which
 		// fields have been submitted
@@ -62,7 +71,7 @@ function xprofile_screen_edit_profile() {
 
 		// Loop through the posted fields formatting any datebox values
 		// then validate the field
-		foreach ( (array)$posted_field_ids as $field_id ) {
+		foreach ( (array) $posted_field_ids as $field_id ) {
 			if ( !isset( $_POST['field_' . $field_id] ) ) {
 
 				if ( !empty( $_POST['field_' . $field_id . '_day'] ) && !empty( $_POST['field_' . $field_id . '_month'] ) && !empty( $_POST['field_' . $field_id . '_year'] ) ) {
@@ -76,8 +85,9 @@ function xprofile_screen_edit_profile() {
 			}
 
 			$is_required[$field_id] = xprofile_check_is_required_field( $field_id );
-			if ( $is_required[$field_id] && empty( $_POST['field_' . $field_id] ) )
+			if ( $is_required[$field_id] && empty( $_POST['field_' . $field_id] ) ) {
 				$errors = true;
+			}
 		}
 
 		// There are errors
@@ -86,11 +96,12 @@ function xprofile_screen_edit_profile() {
 
 		// No errors
 		} else {
+
 			// Reset the errors var
 			$errors = false;
 
 			// Now we've checked for required fields, lets save the values.
-			foreach ( (array)$posted_field_ids as $field_id ) {
+			foreach ( (array) $posted_field_ids as $field_id ) {
 
 				// Certain types of fields (checkboxes, multiselects) may come through empty. Save them as an empty array so that they don't get overwritten by the default on the next edit.
 				if ( empty( $_POST['field_' . $field_id] ) )
@@ -107,7 +118,7 @@ function xprofile_screen_edit_profile() {
 			do_action( 'xprofile_updated_profile', bp_displayed_user_id(), $posted_field_ids, $errors );
 
 			// Set the feedback messages
-			if ( $errors )
+			if ( !empty( $errors ) )
 				bp_core_add_message( __( 'There was a problem updating some of your profile information, please try again.', 'buddypress' ), 'error' );
 			else
 				bp_core_add_message( __( 'Changes saved.', 'buddypress' ) );

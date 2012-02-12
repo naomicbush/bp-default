@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BuddyPress Groups Loader
  *
@@ -7,7 +8,7 @@
  * Comes preconfigured with an activity stream, discussion forums, and settings.
  *
  * @package BuddyPress
- * @subpackage Groups Core
+ * @subpackage GroupsLoader
  */
 
 // Exit if accessed directly
@@ -251,10 +252,9 @@ class BP_Groups_Component extends BP_Component {
 	 * @global obj $bp
 	 */
 	function setup_nav() {
-		global $bp;
 
 		// Define local variables
-		$main_nav = $sub_nav = array();
+		$sub_nav = array();
 
 		// Add 'Groups' to the main navigation
 		$main_nav = array(
@@ -266,7 +266,7 @@ class BP_Groups_Component extends BP_Component {
 			'item_css_id'         => $this->id
 		);
 
-		$groups_link = trailingslashit( $bp->loggedin_user->domain . $this->slug );
+		$groups_link = trailingslashit( bp_loggedin_user_domain() . $this->slug );
 
 		// Add the My Groups nav item
 		$sub_nav[] = array(
@@ -294,7 +294,8 @@ class BP_Groups_Component extends BP_Component {
 
 		if ( bp_is_groups_component() && bp_is_single_item() ) {
 
-			unset( $main_nav ); unset( $sub_nav );
+			// Reset sub nav
+			$sub_nav = array();
 
 			// Add 'Groups' to the main navigation
 			$main_nav = array(
@@ -383,7 +384,7 @@ class BP_Groups_Component extends BP_Component {
 					'parent_slug'     => $this->current_group->slug,
 					'screen_function' => 'groups_screen_group_admin',
 					'position'        => 1000,
-					'user_has_access' => ( $bp->is_item_admin + (int)$bp->is_item_mod ),
+					'user_has_access' => true,
 					'item_css_id'     => 'admin'
 				);
 			}
@@ -412,7 +413,7 @@ class BP_Groups_Component extends BP_Component {
 		if ( is_user_logged_in() ) {
 
 			// Setup the logged in user variables
-			$user_domain = $bp->loggedin_user->domain;
+			$user_domain = bp_loggedin_user_domain();
 			$groups_link = trailingslashit( $user_domain . $this->slug );
 
 			// Pending group invites
@@ -474,7 +475,7 @@ class BP_Groups_Component extends BP_Component {
 					'type'    => 'thumb',
 					'alt'     => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
 				) );
-				$bp->bp_options_title  = $bp->displayed_user->fullname;
+				$bp->bp_options_title = bp_get_displayed_user_fullname();
 
 			// We are viewing a single group, so set up the
 			// group navigation menu using the $this->current_group global.
@@ -487,8 +488,9 @@ class BP_Groups_Component extends BP_Component {
 					'avatar_dir' => 'group-avatars',
 					'alt'        => __( 'Group Avatar', 'buddypress' )
 				) );
-				if ( empty( $bp->bp_options_avatar ) )
+				if ( empty( $bp->bp_options_avatar ) ) {
 					$bp->bp_options_avatar = '<img src="' . esc_attr( $group->avatar_full ) . '" class="avatar" alt="' . esc_attr( $group->name ) . '" />';
+				}
 			}
 		}
 

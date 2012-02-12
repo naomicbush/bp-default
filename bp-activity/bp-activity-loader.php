@@ -110,7 +110,8 @@ class BP_Activity_Component extends BP_Component {
 	 * @uses bp_get_groups_slug()
 	 */
 	function setup_nav() {
-		global $bp;
+
+		$sub_nav = array();
 
 		// Add 'Activity' to the main navigation
 		$main_nav = array(
@@ -127,10 +128,10 @@ class BP_Activity_Component extends BP_Component {
 			return;
 
 		// Determine user to use
-		if ( isset( $bp->displayed_user->domain ) )
-			$user_domain = $bp->displayed_user->domain;
-		elseif ( isset( $bp->loggedin_user->domain ) )
-			$user_domain = $bp->loggedin_user->domain;
+		if ( bp_displayed_user_domain() )
+			$user_domain = bp_displayed_user_domain();
+		elseif ( bp_loggedin_user_domain() )
+			$user_domain = bp_loggedin_user_domain();
 		else
 			return;
 
@@ -222,12 +223,13 @@ class BP_Activity_Component extends BP_Component {
 		if ( is_user_logged_in() ) {
 
 			// Setup the logged in user variables
-			$user_domain   = $bp->loggedin_user->domain;
+			$user_domain   = bp_loggedin_user_domain();
 			$activity_link = trailingslashit( $user_domain . $this->slug );
 
 			// Unread message count
-			if ( $count = bp_get_total_mention_count_for_user( bp_loggedin_user_id() ) ) {
-				$title = sprintf( __( 'Mentions <span class="count">%s</span>', 'buddypress' ), $count );
+			$count = bp_get_total_mention_count_for_user( bp_loggedin_user_id() );
+			if ( !empty( $count ) ) {
+				$title = sprintf( __( 'Mentions <span class="count">%s</span>', 'buddypress' ), number_format_i18n( $count ) );
 			} else {
 				$title = __( 'Mentions', 'buddypress' );
 			}
@@ -311,7 +313,7 @@ class BP_Activity_Component extends BP_Component {
 					'type'    => 'thumb',
 					'alt'	  => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
 				) );
-				$bp->bp_options_title  = $bp->displayed_user->fullname;
+				$bp->bp_options_title  = bp_get_displayed_user_fullname();
 			}
 		}
 

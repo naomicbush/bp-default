@@ -9,7 +9,7 @@
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
-Class BP_Activity_Activity {
+class BP_Activity_Activity {
 	var $id;
 	var $item_id;
 	var $secondary_item_id;
@@ -80,7 +80,7 @@ Class BP_Activity_Activity {
 			return false;
 
 		if ( !$this->primary_link )
-			$this->primary_link = $bp->loggedin_user->domain;
+			$this->primary_link = bp_loggedin_user_domain();
 
 		// If we have an existing ID, update the activity item, otherwise insert it.
 		if ( $this->id )
@@ -172,18 +172,18 @@ Class BP_Activity_Activity {
 		// Get the fullnames of users so we don't have to query in the loop
 		$activity_user_ids = array();
 		if ( bp_is_active( 'xprofile' ) && $activities ) {
-			foreach ( (array)$activities as $activity ) {
-				if ( (int)$activity->user_id )
+			foreach ( (array) $activities as $activity ) {
+				if ( (int) $activity->user_id )
 					$activity_user_ids[] = $activity->user_id;
 			}
 
-			$activity_user_ids = implode( ',', array_unique( (array)$activity_user_ids ) );
+			$activity_user_ids = implode( ',', array_unique( (array) $activity_user_ids ) );
 			if ( !empty( $activity_user_ids ) ) {
 				if ( $names = $wpdb->get_results( $wpdb->prepare( "SELECT user_id, value AS user_fullname FROM {$bp->profile->table_name_data} WHERE field_id = 1 AND user_id IN ({$activity_user_ids})" ) ) ) {
-					foreach ( (array)$names as $name )
+					foreach ( (array) $names as $name )
 						$tmp_names[$name->user_id] = $name->user_fullname;
 
-					foreach ( (array)$activities as $i => $activity ) {
+					foreach ( (array) $activities as $i => $activity ) {
 						if ( !empty( $tmp_names[$activity->user_id] ) )
 							$activities[$i]->user_fullname = $tmp_names[$activity->user_id];
 					}
@@ -196,7 +196,7 @@ Class BP_Activity_Activity {
 		
 		// Get activity meta
 		$activity_ids = array();
-		foreach ( (array)$activities as $activity ) {
+		foreach ( (array) $activities as $activity ) {
 			$activity_ids[] = $activity->id;
 		}
 		
@@ -209,11 +209,11 @@ Class BP_Activity_Activity {
 
 		// If $max is set, only return up to the max results
 		if ( !empty( $max ) ) {
-			if ( (int)$total_activities > (int)$max )
+			if ( (int) $total_activities > (int) $max )
 				$total_activities = $max;
 		}
 
-		return array( 'activities' => $activities, 'total' => (int)$total_activities );
+		return array( 'activities' => $activities, 'total' => (int) $total_activities );
 	}
 
 	/**
@@ -373,7 +373,6 @@ Class BP_Activity_Activity {
 	/**
 	 * Append activity comments to their associated activity items
 	 *
-	 * @global object $bp Global BuddyPress settings object
 	 * @global wpdb $wpdb WordPress database object
 	 * @param array $activities
 	 * @param bool $spam Optional; 'ham_only' (default), 'spam_only' or 'all'.
@@ -381,18 +380,18 @@ Class BP_Activity_Activity {
 	 * @since 1.2
 	 */
 	function append_comments( $activities, $spam = 'ham_only' ) {
-		global $bp, $wpdb;
+		global $wpdb;
 
 		$activity_comments = array();
 
 		/* Now fetch the activity comments and parse them into the correct position in the activities array. */
-		foreach( (array)$activities as $activity ) {
+		foreach( (array) $activities as $activity ) {
 			if ( 'activity_comment' != $activity->type && $activity->mptt_left && $activity->mptt_right )
 				$activity_comments[$activity->id] = BP_Activity_Activity::get_activity_comments( $activity->id, $activity->mptt_left, $activity->mptt_right, $spam );
 		}
 
 		/* Merge the comments with the activity items */
-		foreach( (array)$activities as $key => $activity )
+		foreach( (array) $activities as $key => $activity )
 			if ( isset( $activity_comments[$activity->id] ) )
 				$activities[$key]->children = $activity_comments[$activity->id];
 
@@ -440,7 +439,7 @@ Class BP_Activity_Activity {
 			$descendants = $wpdb->get_results( $sql );
 
 			// Loop descendants and build an assoc array
-			foreach ( (array)$descendants as $d ) {
+			foreach ( (array) $descendants as $d ) {
 				$d->children = array();
 
 				// If we have a reference on the parent
@@ -470,7 +469,7 @@ Class BP_Activity_Activity {
 		$descendants = BP_Activity_Activity::get_child_comments( $parent_id );
 
 		// Loop the descendants and recalculate the left and right values
-		foreach ( (array)$descendants as $descendant )
+		foreach ( (array) $descendants as $descendant )
 			$right = BP_Activity_Activity::rebuild_activity_comment_tree( $descendant->id, $right );
 
 		// We've got the left value, and now that we've processed the children
@@ -497,17 +496,17 @@ Class BP_Activity_Activity {
 	}
 
 	function get_sitewide_items_for_feed( $limit = 35 ) {
-		global $wpdb, $bp;
+		global $bp;
 
-		$activities = bp_activity_get_sitewide( array( 'max' => $limit ) );
+		$activities    = bp_activity_get_sitewide( array( 'max' => $limit ) );
+		$activity_feed = array();
 
 		for ( $i = 0, $count = count( $activities ); $i < $count; ++$i ) {
-				$title = explode( '<span', $activities[$i]['content'] );
-
-				$activity_feed[$i]['title'] = trim( strip_tags( $title[0] ) );
-				$activity_feed[$i]['link'] = $activities[$i]['primary_link'];
+				$title                            = explode( '<span', $activities[$i]['content'] );
+				$activity_feed[$i]['title']       = trim( strip_tags( $title[0] ) );
+				$activity_feed[$i]['link']        = $activities[$i]['primary_link'];
 				$activity_feed[$i]['description'] = @sprintf( $activities[$i]['content'], '' );
-				$activity_feed[$i]['pubdate'] = $activities[$i]['date_recorded'];
+				$activity_feed[$i]['pubdate']     = $activities[$i]['date_recorded'];
 		}
 
 		return $activity_feed;
@@ -538,7 +537,8 @@ Class BP_Activity_Activity {
 	}
 
 	function get_filter_sql( $filter_array ) {
-		global $wpdb;
+
+		$filter_sql = array();
 
 		if ( !empty( $filter_array['user_id'] ) ) {
 			$user_sql = BP_Activity_Activity::get_in_operator_sql( 'a.user_id', $filter_array['user_id'] );
@@ -570,7 +570,7 @@ Class BP_Activity_Activity {
 				$filter_sql[] = $sid_sql;
 		}
 
-		if ( empty($filter_sql) )
+		if ( empty( $filter_sql ) )
 			return false;
 
 		return join( ' AND ', $filter_sql );

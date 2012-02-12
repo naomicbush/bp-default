@@ -1,11 +1,12 @@
 <?php
+
 /**
  * BuddyPress Members Admin Bar
  *
  * Handles the member functions related to the WordPress Admin Bar
  *
  * @package BuddyPress
- * @subpackage Core
+ * @subpackage MembersAdminBar
  */
 
 // Exit if accessed directly
@@ -18,7 +19,7 @@ if ( !defined( 'ABSPATH' ) ) exit;
  * @todo Deprecate WP 3.2 admin bar compatibility when we drop 3.2 support
  */
 function bp_members_admin_bar_my_account_menu() {
-	global $bp, $wp_admin_bar, $wp_version;
+	global $bp, $wp_admin_bar;
 
 	// Bail if this is an ajax request
 	if ( defined( 'DOING_AJAX' ) )
@@ -32,11 +33,10 @@ function bp_members_admin_bar_my_account_menu() {
 
 		// Create the main 'My Account' menu
 		$wp_admin_bar->add_menu( array(
-			//'parent' => 'my-account',
 			'id'     => $bp->my_account_menu_id,
 			'group'  => true,
 			'title'  => __( 'Edit My Profile', 'buddypress' ),
-			'href'   => $bp->loggedin_user->domain,
+			'href'   => bp_loggedin_user_domain(),
 			'meta'   => array(
 			'class'  => 'ab-sub-secondary'
 		) ) );
@@ -145,13 +145,13 @@ add_action( 'admin_bar_menu', 'bp_members_admin_bar_user_admin_menu', 99 );
  * @since 1.5
  */
 function bp_members_admin_bar_notifications_menu() {
-	global $bp, $wp_admin_bar;
+	global $wp_admin_bar;
 
 	if ( !is_user_logged_in() )
 		return false;
 
 	$notifications = bp_core_get_notifications_for_user( bp_loggedin_user_id(), 'object' );
-	$count         = !empty( $notifications ) ? count( $notifications ) : '0';
+	$count         = !empty( $notifications ) ? count( $notifications ) : 0;
 	$alert_class   = (int) $count > 0 ? 'pending-count alert' : 'count no-alert';
 	$menu_title    = '<span id="ab-pending-notifications" class="' . $alert_class . '">' . $count . '</span>';
 
@@ -164,7 +164,7 @@ function bp_members_admin_bar_notifications_menu() {
 	) );
 
 	if ( !empty( $notifications ) ) {
-		foreach ( (array)$notifications as $notification ) {
+		foreach ( (array) $notifications as $notification ) {
 			$wp_admin_bar->add_menu( array(
 				'parent' => 'bp-notifications',
 				'id'     => 'notification-' . $notification->id,

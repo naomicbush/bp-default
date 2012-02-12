@@ -90,6 +90,8 @@ class BP_Friends_Component extends BP_Component {
 	function setup_nav() {
 		global $bp;
 
+		$sub_nav = array();
+
 		// Add 'Friends' to the main navigation
 		$main_nav = array(
 			'name'                => sprintf( __( 'Friends <span>%d</span>', 'buddypress' ), friends_get_total_friend_count() ),
@@ -100,7 +102,7 @@ class BP_Friends_Component extends BP_Component {
 			'item_css_id'         => $bp->friends->id
 		);
 
-		$friends_link = trailingslashit( $bp->loggedin_user->domain . bp_get_friends_slug() );
+		$friends_link = trailingslashit( bp_loggedin_user_domain() . bp_get_friends_slug() );
 
 		// Add the subnav items to the friends nav item
 		$sub_nav[] = array(
@@ -141,13 +143,14 @@ class BP_Friends_Component extends BP_Component {
 		if ( is_user_logged_in() ) {
 
 			// Setup the logged in user variables
-			$user_domain  = $bp->loggedin_user->domain;
+			$user_domain  = bp_loggedin_user_domain();
 			$friends_link = trailingslashit( $user_domain . $this->slug );
 
 			// Pending friend requests
-			if ( $count = count( friends_get_friendship_request_user_ids( bp_loggedin_user_id() ) ) ) {
-				$title   = sprintf( __( 'Friends <span class="count">%s</span>',          'buddypress' ), $count );
-				$pending = sprintf( __( 'Pending Requests <span class="count">%s</span>', 'buddypress' ), $count );
+			$count = count( friends_get_friendship_request_user_ids( bp_loggedin_user_id() ) );
+			if ( !empty( $count ) ) {
+				$title   = sprintf( __( 'Friends <span class="count">%s</span>',          'buddypress' ), number_format_i18n( $count ) );
+				$pending = sprintf( __( 'Pending Requests <span class="count">%s</span>', 'buddypress' ), number_format_i18n( $count ) );
 			} else {
 				$title   = __( 'Friends',             'buddypress' );
 				$pending = __( 'No Pending Requests', 'buddypress' );
@@ -199,7 +202,7 @@ class BP_Friends_Component extends BP_Component {
 					'type'    => 'thumb',
 					'alt'     => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
 				) );
-				$bp->bp_options_title  = $bp->displayed_user->fullname;
+				$bp->bp_options_title = bp_get_displayed_user_fullname();
 			}
 		}
 

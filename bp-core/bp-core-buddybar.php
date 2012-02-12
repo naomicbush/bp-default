@@ -39,7 +39,7 @@ function bp_core_new_nav_item( $args = '' ) {
 	$bp->bp_nav[$slug] = array(
 		'name'                    => $name,
 		'slug'                    => $slug,
-		'link'                    => trailingslashit( $bp->loggedin_user->domain . $slug ),
+		'link'                    => trailingslashit( bp_loggedin_user_domain() . $slug ),
 		'css_id'                  => $item_css_id,
 		'show_for_displayed_user' => $show_for_displayed_user,
 		'position'                => $position,
@@ -150,7 +150,7 @@ function bp_core_sort_nav_items() {
 	if ( empty( $bp->bp_nav ) || !is_array( $bp->bp_nav ) )
 		return false;
 
-	foreach ( (array)$bp->bp_nav as $slug => $nav_item ) {
+	foreach ( (array) $bp->bp_nav as $slug => $nav_item ) {
 		if ( empty( $temp[$nav_item['position']]) )
 			$temp[$nav_item['position']] = $nav_item;
 		else {
@@ -287,11 +287,11 @@ function bp_core_sort_subnav_items() {
 	if ( empty( $bp->bp_options_nav ) || !is_array( $bp->bp_options_nav ) )
 		return false;
 
-	foreach ( (array)$bp->bp_options_nav as $parent_slug => $subnav_items ) {
+	foreach ( (array) $bp->bp_options_nav as $parent_slug => $subnav_items ) {
 		if ( !is_array( $subnav_items ) )
 			continue;
 
-		foreach ( (array)$subnav_items as $subnav_item ) {
+		foreach ( (array) $subnav_items as $subnav_item ) {
 			if ( empty( $temp[$subnav_item['position']]) )
 				$temp[$subnav_item['position']] = $subnav_item;
 			else {
@@ -343,7 +343,7 @@ function bp_core_remove_nav_item( $parent_id ) {
 
 	// Unset subnav items for this nav item
 	if ( isset( $bp->bp_options_nav[$parent_id] ) && is_array( $bp->bp_options_nav[$parent_id] ) ) {
-		foreach( (array)$bp->bp_options_nav[$parent_id] as $subnav_item ) {
+		foreach( (array) $bp->bp_options_nav[$parent_id] as $subnav_item ) {
 			bp_core_remove_subnav_item( $parent_id, $subnav_item['slug'] );
 		}
 	}
@@ -428,19 +428,16 @@ function bp_core_admin_bar() {
 
 // **** Default BuddyPress admin bar logo ********
 function bp_adminbar_logo() {
-	global $bp;
-
 	echo '<a href="' . bp_get_root_domain() . '" id="admin-bar-logo">' . get_blog_option( bp_get_root_blog_id(), 'blogname' ) . '</a>';
 }
 
 // **** "Log In" and "Sign Up" links (Visible when not logged in) ********
 function bp_adminbar_login_menu() {
-	global $bp;
 
 	if ( is_user_logged_in() )
 		return false;
 
-	echo '<li class="bp-login no-arrow"><a href="' . bp_get_root_domain() . '/wp-login.php?redirect_to=' . urlencode( bp_get_root_domain() ) . '">' . __( 'Log In', 'buddypress' ) . '</a></li>';
+	echo '<li class="bp-login no-arrow"><a href="' . wp_login_url() . '">' . __( 'Log In', 'buddypress' ) . '</a></li>';
 
 	// Show "Sign Up" link if user registrations are allowed
 	if ( bp_get_signup_allowed() )
@@ -461,7 +458,7 @@ function bp_adminbar_account_menu() {
 
 	// Loop through each navigation item
 	$counter = 0;
-	foreach( (array)$bp->bp_nav as $nav_item ) {
+	foreach( (array) $bp->bp_nav as $nav_item ) {
 		$alt = ( 0 == $counter % 2 ) ? ' class="alt"' : '';
 
 		if ( -1 == $nav_item['position'] )
@@ -474,12 +471,12 @@ function bp_adminbar_account_menu() {
 			echo '<ul>';
 			$sub_counter = 0;
 
-			foreach( (array)$bp->bp_options_nav[$nav_item['slug']] as $subnav_item ) {
+			foreach( (array) $bp->bp_options_nav[$nav_item['slug']] as $subnav_item ) {
 				$link = $subnav_item['link'];
 				$name = $subnav_item['name'];
 
-				if ( isset( $bp->displayed_user->domain ) )
-					$link = str_replace( $bp->displayed_user->domain, $bp->loggedin_user->domain, $subnav_item['link'] );
+				if ( bp_displayed_user_domain() )
+					$link = str_replace( bp_displayed_user_domain(), bp_loggedin_user_domain(), $subnav_item['link'] );
 
 				if ( isset( $bp->displayed_user->userdata->user_login ) )
 					$name = str_replace( $bp->displayed_user->userdata->user_login, $bp->loggedin_user->userdata->user_login, $subnav_item['name'] );
@@ -524,7 +521,7 @@ function bp_adminbar_thisblog_menu() {
 
 // **** "Random" Menu (visible when not logged in) ********
 function bp_adminbar_random_menu() {
-	global $bp; ?>
+?>
 
 	<li class="align-right" id="bp-adminbar-visitrandom-menu">
 		<a href="#"><?php _e( 'Visit', 'buddypress' ) ?></a>
@@ -652,4 +649,5 @@ function bp_core_load_buddybar_css() {
 	wp_enqueue_style( 'bp-admin-bar-rtl', apply_filters( 'bp_core_buddybar_rtl_css', $stylesheet ), array( 'bp-admin-bar' ), '20110723' );
 }
 add_action( 'bp_init', 'bp_core_load_buddybar_css' );
+
 ?>

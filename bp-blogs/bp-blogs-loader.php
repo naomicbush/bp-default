@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BuddyPress Blogs Streams Loader
  *
@@ -102,6 +103,8 @@ class BP_Blogs_Component extends BP_Component {
 		if ( !is_multisite() )
 			return false;
 
+		$sub_nav = array();
+
 		// Add 'Sites' to the main navigation
 		$main_nav =  array(
 			'name'                => sprintf( __( 'Sites <span>%d</span>', 'buddypress' ), bp_blogs_total_blogs_for_user() ),
@@ -149,7 +152,7 @@ class BP_Blogs_Component extends BP_Component {
 		// Menus for logged in user
 		if ( is_user_logged_in() ) {
 
-			$blogs_link = trailingslashit( $bp->loggedin_user->domain . $this->slug );
+			$blogs_link = trailingslashit( bp_loggedin_user_domain() . $this->slug );
 
 			// Add the "Blogs" sub menu
 			$wp_admin_nav[] = array(
@@ -195,7 +198,7 @@ class BP_Blogs_Component extends BP_Component {
 					'type'    => 'thumb',
 					'alt'     => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
 				) );
-				$bp->bp_options_title = $bp->displayed_user->fullname;
+				$bp->bp_options_title = bp_get_displayed_user_fullname();
 			}
 		}
 

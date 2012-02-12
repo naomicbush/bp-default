@@ -1,4 +1,13 @@
 <?php
+
+/**
+ * BuddyPress Settings Actions
+ *
+ * @todo split actions into separate screen functions
+ * @package BuddyPress
+ * @subpackage SettingsActions
+ */
+
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
@@ -42,7 +51,7 @@ function bp_core_screen_general_settings() {
 				if ( is_array( $limited_email_domains ) && empty( $limited_email_domains ) == false ) {
 					$emaildomain = substr( $user_email, 1 + strpos( $user_email, '@' ) );
 
-					if ( in_array( $emaildomain, (array)$limited_email_domains ) == false ) {
+					if ( in_array( $emaildomain, (array) $limited_email_domains ) == false ) {
 						$email_error = true;
 					}
 				}
@@ -123,7 +132,6 @@ function bp_core_screen_general_settings() {
 /** Notifications *************************************************************/
 
 function bp_core_screen_notification_settings() {
-	global $bp;
 
 	if ( bp_action_variables() ) {
 		bp_do_404();
@@ -134,7 +142,7 @@ function bp_core_screen_notification_settings() {
 		check_admin_referer('bp_settings_notifications');
 
 		if ( isset( $_POST['notifications'] ) ) {
-			foreach ( (array)$_POST['notifications'] as $key => $value ) {
+			foreach ( (array) $_POST['notifications'] as $key => $value ) {
 				if ( $meta_key = bp_get_user_meta_key( $key ) )
 					bp_update_user_meta( (int)bp_displayed_user_id(), $meta_key, $value );
 			}
@@ -153,7 +161,6 @@ function bp_core_screen_notification_settings() {
 /** Delete Account ************************************************************/
 
 function bp_core_screen_delete_account() {
-	global $bp;
 
 	if ( bp_action_variables() ) {
 		bp_do_404();

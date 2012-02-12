@@ -188,7 +188,7 @@ function bp_core_admin_settings() {
 		// Because many settings are saved with checkboxes, and thus will have no values
 		// in the $_POST array when unchecked, we loop through the registered settings
 		if ( isset( $wp_settings_fields['buddypress'] ) ) {
-			foreach( (array)$wp_settings_fields['buddypress'] as $section => $settings ) {
+			foreach( (array) $wp_settings_fields['buddypress'] as $section => $settings ) {
 				foreach( $settings as $setting_name => $setting ) {
 					$value = isset( $_POST[$setting_name] ) ? $_POST[$setting_name] : '';
 					
@@ -295,7 +295,7 @@ function bp_form_option( $option, $default = '' , $slug = false ) {
 	 *
 	 * @since BuddyPress (r3203)
 	 *
-	 * @uses get_option()
+	 * @uses bp_get_option()
 	 * @uses esc_attr()
 	 * @uses apply_filters()
 	 *
@@ -306,7 +306,7 @@ function bp_form_option( $option, $default = '' , $slug = false ) {
 	function bp_get_form_option( $option, $default = '', $slug = false ) {
 
 		// Get the option and sanitize it
-		$value = get_option( $option, $default );
+		$value = bp_get_option( $option, $default );
 
 		// Slug?
 		if ( true === $slug )

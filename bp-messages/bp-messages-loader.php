@@ -1,11 +1,12 @@
 <?php
+
 /**
- * BuddyPress Private Messages Loader
+ * BuddyPress Messages Loader
  *
  * A private messages component, for users to send messages to each other
  *
  * @package BuddyPress
- * @subpackage Messages Core
+ * @subpackage MessagesLoader
  */
 
 // Exit if accessed directly
@@ -90,9 +91,9 @@ class BP_Messages_Component extends BP_Component {
 	 * @global obj $bp
 	 */
 	function setup_nav() {
-		global $bp;
 
-		$name = sprintf( __( 'Messages <span>%s</span>', 'buddypress' ), bp_get_total_unread_messages_count() );
+		$sub_nav = array();
+		$name    = sprintf( __( 'Messages <span>%s</span>', 'buddypress' ), bp_get_total_unread_messages_count() );
 
 		// Add 'Messages' to the main navigation
 		$main_nav = array(
@@ -106,7 +107,7 @@ class BP_Messages_Component extends BP_Component {
 		);
 
 		// Link to user messages
-		$messages_link = trailingslashit( $bp->loggedin_user->domain . $this->slug );
+		$messages_link = trailingslashit( bp_loggedin_user_domain() . $this->slug );
 
 		// Add the subnav items to the profile
 		$sub_nav[] = array(
@@ -169,13 +170,14 @@ class BP_Messages_Component extends BP_Component {
 		if ( is_user_logged_in() ) {
 
 			// Setup the logged in user variables
-			$user_domain   = $bp->loggedin_user->domain;
+			$user_domain   = bp_loggedin_user_domain();
 			$messages_link = trailingslashit( $user_domain . $this->slug );
 
 			// Unread message count
-			if ( $count = messages_get_unread_count() ) {
-				$title = sprintf( __( 'Messages <span class="count">%s</span>', 'buddypress' ), $count );
-				$inbox = sprintf( __( 'Inbox <span class="count">%s</span>',    'buddypress' ), $count );
+			$count = messages_get_unread_count();
+			if ( !empty( $count ) ) {
+				$title = sprintf( __( 'Messages <span class="count">%s</span>', 'buddypress' ), number_format_i18n( $count ) );
+				$inbox = sprintf( __( 'Inbox <span class="count">%s</span>',    'buddypress' ), number_format_i18n( $count ) );
 			} else {
 				$title = __( 'Messages', 'buddypress' );
 				$inbox = __( 'Inbox',    'buddypress' );
@@ -244,7 +246,7 @@ class BP_Messages_Component extends BP_Component {
 					'type'    => 'thumb',
 					'alt'     => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
 				) );
-				$bp->bp_options_title = $bp->displayed_user->fullname;
+				$bp->bp_options_title = bp_get_displayed_user_fullname();
 			}
 		}
 

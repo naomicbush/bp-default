@@ -1,4 +1,5 @@
 <?php
+
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
@@ -54,7 +55,7 @@ add_filter( 'wp_mail_from_name', 'bp_core_email_from_name_filter' );
  * @package BuddyPress Core
  */
 function bp_core_allow_default_theme( $themes ) {
-	global $bp, $wpdb;
+	global $wpdb;
 
 	if ( !bp_current_user_can( 'bp_moderate' ) )
 		return $themes;
@@ -77,7 +78,7 @@ add_filter( 'allowed_themes', 'bp_core_allow_default_theme' );
 function bp_core_filter_comments( $comments, $post_id ) {
 	global $wpdb;
 
-	foreach( (array)$comments as $comment ) {
+	foreach( (array) $comments as $comment ) {
 		if ( $comment->user_id )
 			$user_ids[] = $comment->user_id;
 	}
@@ -90,10 +91,10 @@ function bp_core_filter_comments( $comments, $post_id ) {
 	if ( !$userdata = $wpdb->get_results( $wpdb->prepare( "SELECT ID as user_id, user_login, user_nicename FROM {$wpdb->users} WHERE ID IN ({$user_ids})" ) ) )
 		return $comments;
 
-	foreach( (array)$userdata as $user )
+	foreach( (array) $userdata as $user )
 		$users[$user->user_id] = bp_core_get_user_domain( $user->user_id, $user->user_nicename, $user->user_login );
 
-	foreach( (array)$comments as $i => $comment ) {
+	foreach( (array) $comments as $i => $comment ) {
 		if ( !empty( $comment->user_id ) ) {
 			if ( !empty( $users[$comment->user_id] ) )
 				$comments[$i]->comment_author_url = $users[$comment->user_id];
@@ -112,7 +113,7 @@ add_filter( 'comments_array', 'bp_core_filter_comments', 10, 2 );
  * @package BuddyPress Core
  */
 function bp_core_login_redirect( $redirect_to ) {
-	global $bp, $wpdb;
+	global $wpdb;
 
 	// Don't mess with the redirect if this is not the root blog
 	if ( is_multisite() && $wpdb->blogid != bp_get_root_blog_id() )
@@ -140,7 +141,8 @@ add_filter( 'login_redirect', 'bp_core_login_redirect' );
  * @return string Filtered $welcome_email with 'PASSWORD' replaced by [User Set]
  */
 function bp_core_filter_user_welcome_email( $welcome_email ) {
-	/* Don't touch the email if we don't have a custom registration template */
+
+	// Don't touch the email if we don't have a custom registration template
 	if ( '' == locate_template( array( 'registration/register.php' ), false ) && '' == locate_template( array( 'register.php' ), false ) )
 		return $welcome_email;
 
@@ -164,7 +166,8 @@ if ( !is_admin() && empty( $_GET['e'] ) )
  * @return string Filtered $welcome_email with $password replaced by [User Set]
  */
 function bp_core_filter_blog_welcome_email( $welcome_email, $blog_id, $user_id, $password ) {
-	/* Don't touch the email if we don't have a custom registration template */
+
+	// Don't touch the email if we don't have a custom registration template
 	if ( '' == locate_template( array( 'registration/register.php' ), false ) && '' == locate_template( array( 'register.php' ), false ) )
 		return $welcome_email;
 
@@ -243,8 +246,6 @@ if ( !is_admin() || ( is_admin() && empty( $_POST['noconfirmation'] ) ) )
  * Filter the page title for BuddyPress pages
  *
  * @global object $bp BuddyPress global settings
- * @global unknown $post
- * @global WP_Query $wp_query WordPress query object
  * @param string $title Original page title
  * @param string $sep How to separate the various items within the page title.
  * @param string $seplocation Direction to display title
@@ -253,7 +254,7 @@ if ( !is_admin() || ( is_admin() && empty( $_POST['noconfirmation'] ) ) )
  * @since 1.5
  */
 function bp_modify_page_title( $title, $sep, $seplocation ) {
-	global $bp, $post, $wp_query;
+	global $bp;
 
 	// If this is not a BP page, just return the title produced by WP
 	if ( bp_is_blog_page() )
@@ -266,9 +267,22 @@ function bp_modify_page_title( $title, $sep, $seplocation ) {
 	$title = '';
 
 	// Displayed user
-	if ( !empty( $bp->displayed_user->fullname ) && !is_404() ) {
+	if ( bp_get_displayed_user_fullname() && !is_404() ) {
+
+		// Get the component's ID to try and get it's name
+		$component_id = $component_name = bp_current_component();
+		
+		// Use the actual component name
+		if ( !empty( $bp->{$component_id}->name ) ) {
+			$component_name = $bp->{$component_id}->name;
+			
+		// Fall back on the component ID (probably same as current_component)
+		} elseif ( !empty( $bp->{$component_id}->id ) ) {
+			$component_name = $bp->{$component_id}->id;
+		}
+
 		// translators: "displayed user's name | canonicalised component name"
-		$title = strip_tags( sprintf( __( '%1$s | %2$s', 'buddypress' ), bp_get_displayed_user_fullname(), ucwords( bp_current_component() ) ) );
+		$title = strip_tags( sprintf( __( '%1$s | %2$s', 'buddypress' ), bp_get_displayed_user_fullname(), ucwords( $component_name ) ) );
 
 	// A single group
 	} elseif ( bp_is_active( 'groups' ) && !empty( $bp->groups->current_group ) && !empty( $bp->bp_options_nav[$bp->groups->current_group->slug] ) ) {

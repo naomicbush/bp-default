@@ -33,7 +33,6 @@ class BP_Members_Component extends BP_Component {
 	 */
 	function includes() {
 		$includes = array(
-			'signup',
 			'actions',
 			'filters',
 			'screens',
@@ -56,7 +55,7 @@ class BP_Members_Component extends BP_Component {
 	 * @global obj $bp
 	 */
 	function setup_globals() {
-		global $bp, $current_user, $displayed_user_id;
+		global $bp;
 
 		// Define a slug, if necessary
 		if ( !defined( 'BP_MEMBERS_SLUG' ) )
@@ -97,6 +96,7 @@ class BP_Members_Component extends BP_Component {
 		$bp->displayed_user->fullname = bp_core_get_user_displayname( bp_displayed_user_id() );
 
 		/** Profiles Fallback *************************************************/
+
 		if ( !bp_is_active( 'xprofile' ) ) {
 			$bp->profile->slug = 'profile';
 			$bp->profile->id   = 'profile';
@@ -114,7 +114,7 @@ class BP_Members_Component extends BP_Component {
 		}
 
 		if ( !bp_current_component() && bp_displayed_user_id() ) {
-			$bp->current_component 		 = $bp->default_component;
+			$bp->current_component = $bp->default_component;
 			
 			// Prepare for a redirect to the canonical URL
 			$bp->redirect_stack['base_url']  = bp_displayed_user_domain();
@@ -132,10 +132,12 @@ class BP_Members_Component extends BP_Component {
 
 		// Add 'Profile' to the main navigation
 		if ( !bp_is_active( 'xprofile' ) ) {
+
 			// Don't set up navigation if there's no user
 			if ( !is_user_logged_in() && !bp_is_user() )
 				return;
 
+			$sub_nav  = array();
 			$main_nav = array(
 				'name'                => __( 'Profile', 'buddypress' ),
 				'slug'                => $bp->profile->slug,
@@ -146,8 +148,7 @@ class BP_Members_Component extends BP_Component {
 			);
 
 			// User links
-			$user_domain   = ( isset( $bp->displayed_user->domain ) )               ? $bp->displayed_user->domain               : $bp->loggedin_user->domain;
-			$user_login    = ( isset( $bp->displayed_user->userdata->user_login ) ) ? $bp->displayed_user->userdata->user_login : $bp->loggedin_user->userdata->user_login;
+			$user_domain   = bp_displayed_user_domain() ? bp_displayed_user_domain() : bp_loggedin_user_domain();
 			$profile_link  = trailingslashit( $user_domain . $bp->profile->slug );
 
 			// Add the subnav items to the profile
@@ -180,7 +181,7 @@ class BP_Members_Component extends BP_Component {
 				'type'    => 'thumb',
 				'alt'     => sprintf( __( 'Profile picture of %s', 'buddypress' ), bp_get_displayed_user_fullname() )
 			) );
-			$bp->bp_options_title  = $bp->displayed_user->fullname;
+			$bp->bp_options_title = bp_get_displayed_user_fullname();
 		}
 
 		parent::setup_title();

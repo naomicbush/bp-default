@@ -1,9 +1,15 @@
 <?php
+
 /**
+ * BuddyPress Groups Functions
+ *
  * Functions are where all the magic happens in BuddyPress. They will
  * handle the actual saving or manipulation of information. Usually they will
  * hand off to a database class for data access, then return
  * true or false on success or failure.
+ *
+ * @package BuddyPress
+ * @subpackage GroupsFunctions
  */
 
 // Exit if accessed directly
@@ -55,7 +61,6 @@ function groups_get_group( $args = '' ) {
 /*** Group Creation, Editing & Deletion *****************************************/
 
 function groups_create_group( $args = '' ) {
-	global $bp;
 
 	extract( $args );
 
@@ -71,12 +76,12 @@ function groups_create_group( $args = '' ) {
 	 *	'date_created'
 	 */
 
-	if ( isset( $group_id ) && $group_id )
+	if ( !empty( $group_id ) )
 		$group = groups_get_group( array( 'group_id' => $group_id ) );
 	else
 		$group = new BP_Groups_Group;
 
-	if ( isset( $creator_id ) && $creator_id )
+	if ( !empty( $creator_id ) )
 		$group->creator_id = $creator_id;
 	else
 		$group->creator_id = bp_loggedin_user_id();
@@ -91,13 +96,14 @@ function groups_create_group( $args = '' ) {
 		$group->slug = $slug;
 
 	if ( isset( $status ) ) {
-		if ( groups_is_valid_status( $status ) )
+		if ( groups_is_valid_status( $status ) ) {
 			$group->status = $status;
+		}
 	}
 
 	if ( isset( $enable_forum ) )
 		$group->enable_forum = $enable_forum;
-	else if ( !$group_id && !isset( $enable_forum ) )
+	else if ( empty( $group_id ) && !isset( $enable_forum ) )
 		$group->enable_forum = 1;
 
 	if ( isset( $date_created ) )
@@ -115,8 +121,8 @@ function groups_create_group( $args = '' ) {
 		$member->user_title    = __( 'Group Admin', 'buddypress' );
 		$member->is_confirmed  = 1;
 		$member->date_modified = bp_core_current_time();
-
 		$member->save();
+
 		do_action( 'groups_create_group', $group->id, $member, $group );
 
 	} else {
@@ -129,7 +135,6 @@ function groups_create_group( $args = '' ) {
 }
 
 function groups_edit_base_group_details( $group_id, $group_name, $group_desc, $notify_members ) {
-	global $bp;
 
 	if ( empty( $group_name ) || empty( $group_desc ) )
 		return false;
@@ -151,7 +156,6 @@ function groups_edit_base_group_details( $group_id, $group_name, $group_desc, $n
 }
 
 function groups_edit_group_settings( $group_id, $enable_forum, $status, $invite_status = false ) {
-	global $bp;
 
 	$group = groups_get_group( array( 'group_id' => $group_id ) );
 	$group->enable_forum = $enable_forum;
@@ -197,7 +201,7 @@ function groups_delete_group( $group_id ) {
 	global $bp;
 
 	// Check the user is the group admin.
-	if ( !$bp->is_item_admin )
+	if ( ! bp_is_item_admin() )
 		return false;
 
 	// Get the group object
@@ -231,7 +235,7 @@ function groups_delete_group( $group_id ) {
 function groups_is_valid_status( $status ) {
 	global $bp;
 
-	return in_array( $status, (array)$bp->groups->valid_status );
+	return in_array( $status, (array) $bp->groups->valid_status );
 }
 
 function groups_check_slug( $slug ) {
@@ -240,7 +244,7 @@ function groups_check_slug( $slug ) {
 	if ( 'wp' == substr( $slug, 0, 2 ) )
 		$slug = substr( $slug, 2, strlen( $slug ) - 2 );
 
-	if ( in_array( $slug, (array)$bp->groups->forbidden_names ) )
+	if ( in_array( $slug, (array) $bp->groups->forbidden_names ) )
 		$slug = $slug . '-' . rand();
 
 	if ( BP_Groups_Group::check_slug( $slug ) ) {
@@ -263,7 +267,7 @@ function groups_get_slug( $group_id ) {
 function groups_leave_group( $group_id, $user_id = 0 ) {
 	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = bp_loggedin_user_id();
 
 	// Don't let single admins leave the group.
@@ -304,7 +308,7 @@ function groups_leave_group( $group_id, $user_id = 0 ) {
 function groups_join_group( $group_id, $user_id = 0 ) {
 	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = bp_loggedin_user_id();
 
 	// Check if the user has an outstanding invite, is so delete it.
@@ -378,7 +382,6 @@ function groups_get_total_member_count( $group_id ) {
 /*** Group Fetching, Filtering & Searching  *************************************/
 
 function groups_get_groups( $args = '' ) {
-	global $bp;
 
 	$defaults = array(
 		'type'            => 'active', // active, newest, alphabetical, random, popular, most-forum-topics or most-forum-posts
@@ -387,7 +390,6 @@ function groups_get_groups( $args = '' ) {
 		'exclude'         => false,    // Do not include these specific groups (group_ids)
 		'search_terms'    => false,    // Limit to groups that match these search terms
 		'show_hidden'     => false,    // Show hidden groups to non-admins
-
 		'per_page'        => 20,       // The number of results to return per page
 		'page'            => 1,        // The page to return if limiting per page
 		'populate_extras' => true,     // Fetch meta such as is_banned and is_member
@@ -411,18 +413,16 @@ function groups_get_total_group_count() {
 }
 
 function groups_get_user_groups( $user_id = 0, $pag_num = 0, $pag_page = 0 ) {
-	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = bp_displayed_user_id();
 
 	return BP_Groups_Member::get_group_ids( $user_id, $pag_num, $pag_page );
 }
 
 function groups_total_groups_for_user( $user_id = 0 ) {
-	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
 
 	if ( !$count = wp_cache_get( 'bp_total_groups_for_user_' . $user_id, 'bp' ) ) {
@@ -547,16 +547,14 @@ function groups_post_update( $args = '' ) {
 /*** Group Invitations *********************************************************/
 
 function groups_get_invites_for_user( $user_id = 0, $limit = false, $page = false, $exclude = false ) {
-	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = bp_loggedin_user_id();
 
 	return BP_Groups_Member::get_invites( $user_id, $limit, $page, $exclude );
 }
 
 function groups_invite_user( $args = '' ) {
-	global $bp;
 
 	$defaults = array(
 		'user_id'       => false,
@@ -569,7 +567,7 @@ function groups_invite_user( $args = '' ) {
 	$args = wp_parse_args( $args, $defaults );
 	extract( $args, EXTR_SKIP );
 
-	if ( !$user_id || !$group_id )
+	if ( empty( $user_id ) || empty( $group_id ) )
 		return false;
 
 	if ( !groups_is_user_member( $user_id, $group_id ) && !groups_check_user_has_invite( $user_id, $group_id, 'all' ) ) {
@@ -590,7 +588,6 @@ function groups_invite_user( $args = '' ) {
 }
 
 function groups_uninvite_user( $user_id, $group_id ) {
-	global $bp;
 
 	if ( !BP_Groups_Member::delete( $user_id, $group_id ) )
 		return false;
@@ -647,9 +644,8 @@ function groups_delete_invite( $user_id, $group_id ) {
 }
 
 function groups_send_invites( $user_id, $group_id ) {
-	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = bp_loggedin_user_id();
 
 	// Send friend invites.
@@ -698,9 +694,8 @@ function groups_delete_all_group_invites( $group_id ) {
 /*** Group Promotion & Banning *************************************************/
 
 function groups_promote_member( $user_id, $group_id, $status ) {
-	global $bp;
 
-	if ( !$bp->is_item_admin )
+	if ( ! bp_is_item_admin() )
 		return false;
 
 	$member = new BP_Groups_Member( $user_id, $group_id );
@@ -711,7 +706,9 @@ function groups_promote_member( $user_id, $group_id, $status ) {
 }
 
 function groups_demote_member( $user_id, $group_id ) {
-	global $bp;
+
+	if ( ! bp_is_item_admin() || ! bp_is_item_mod() )
+		return false;
 
 	$member = new BP_Groups_Member( $user_id, $group_id );
 
@@ -721,9 +718,8 @@ function groups_demote_member( $user_id, $group_id ) {
 }
 
 function groups_ban_member( $user_id, $group_id ) {
-	global $bp;
 
-	if ( !$bp->is_item_admin )
+	if ( ! bp_is_item_admin() )
 		return false;
 
 	$member = new BP_Groups_Member( $user_id, $group_id );
@@ -734,9 +730,8 @@ function groups_ban_member( $user_id, $group_id ) {
 }
 
 function groups_unban_member( $user_id, $group_id ) {
-	global $bp;
 
-	if ( !$bp->is_item_admin )
+	if ( ! bp_is_item_admin() )
 		return false;
 
 	$member = new BP_Groups_Member( $user_id, $group_id );
@@ -749,9 +744,8 @@ function groups_unban_member( $user_id, $group_id ) {
 /*** Group Removal *******************************************************/
 
 function groups_remove_member( $user_id, $group_id ) {
-	global $bp;
 
-	if ( !$bp->is_item_admin )
+	if ( ! bp_is_item_admin() )
 		return false;
 
 	$member = new BP_Groups_Member( $user_id, $group_id );
@@ -764,7 +758,6 @@ function groups_remove_member( $user_id, $group_id ) {
 /*** Group Membership ****************************************************/
 
 function groups_send_membership_request( $requesting_user_id, $group_id ) {
-	global $bp;
 
 	// Prevent duplicate requests
 	if ( groups_check_for_membership_request( $requesting_user_id, $group_id ) )
@@ -800,9 +793,8 @@ function groups_send_membership_request( $requesting_user_id, $group_id ) {
 }
 
 function groups_accept_membership_request( $membership_id, $user_id = 0, $group_id = 0 ) {
-	global $bp;
 
-	if ( $user_id && $group_id )
+	if ( !empty( $user_id ) && !empty( $group_id ) )
 		$membership = new BP_Groups_Member( $user_id, $group_id );
 	else
 		$membership = new BP_Groups_Member( false, false, $membership_id );
@@ -850,7 +842,7 @@ function groups_reject_membership_request( $membership_id, $user_id = 0, $group_
 }
 
 function groups_delete_membership_request( $membership_id, $user_id = 0, $group_id = 0 ) {
-	if ( $user_id && $group_id )
+	if ( !empty( $user_id ) && !empty( $group_id ) )
 		$membership = new BP_Groups_Member( $user_id, $group_id );
 	else
 		$membership = new BP_Groups_Member( false, false, $membership_id );
@@ -934,7 +926,7 @@ function groups_get_groupmeta( $group_id, $meta_key = '') {
 			return '';
 	}
 
-	$metas = array_map( 'maybe_unserialize', (array)$metas );
+	$metas = array_map( 'maybe_unserialize', (array) $metas );
 
 	if ( 1 == count( $metas ) )
 		return $metas[0];

@@ -108,14 +108,7 @@ class BP_Core_User {
 	 */
 	var $total_groups;
 
-	/**
-	 * PHP4 constructor.
-	 *
-	 * @see BP_Core_User::__construct()
-	 */
-	function bp_core_user( $user_id, $populate_extras = false ) {
-		$this->__construct( $user_id, $populate_extras );
-	}
+	/** Public Method*s *******************************************************/
 
 	/**
 	 * Class constructor.
@@ -123,20 +116,22 @@ class BP_Core_User {
 	 * @param integer $user_id The ID for the user
 	 * @param boolean $populate_extras Whether to fetch extra information such as group/friendship counts or not.
 	 */
-	function __construct( $user_id, $populate_extras = false ) {
-		if ( $user_id ) {
+	public function __construct( $user_id, $populate_extras = false ) {
+		if ( !empty( $user_id ) ) {
 			$this->id = $user_id;
 			$this->populate();
 
-			if ( $populate_extras )
+			if ( !empty( $populate_extras ) ) {
 				$this->populate_extras();
+			}
 		}
 	}
+
+	/** Private Methods *******************************************************/
 
 	/**
 	 * Populate the instantiated class with data based on the User ID provided.
 	 *
-	 * @global object $bp Global BuddyPress settings object
 	 * @uses bp_core_get_userurl() Returns the URL with no HTML markup for a user based on their user id
 	 * @uses bp_core_get_userlink() Returns a HTML formatted link for a user with the user's full name as the link text
 	 * @uses bp_core_get_user_email() Returns the email address for the user based on user ID
@@ -144,8 +139,7 @@ class BP_Core_User {
 	 * @uses bp_core_fetch_avatar() Returns HTML formatted avatar for a user
 	 * @uses bp_profile_last_updated_date() Returns the last updated date for a user.
 	 */
-	function populate() {
-		global $bp;
+	private function populate() {
 
 		if ( bp_is_active( 'xprofile' ) )
 			$this->profile_data = $this->get_profile_data();
@@ -177,14 +171,12 @@ class BP_Core_User {
 
 	/**
 	 * Populates extra fields such as group and friendship counts.
-	 *
-	 * @global object $bp Global BuddyPress settings object
 	 */
-	function populate_extras() {
-		global $bp;
+	private function populate_extras() {
 
-		if ( bp_is_active( 'friends' ) )
+		if ( bp_is_active( 'friends' ) ) {
 			$this->total_friends = BP_Friends_Friendship::total_friend_count( $this->id );
+		}
 
 		if ( bp_is_active( 'groups' ) ) {
 			$this->total_groups = BP_Groups_Member::total_group_count( $this->id );
@@ -192,94 +184,106 @@ class BP_Core_User {
 		}
 	}
 
-	function get_profile_data() {
+	private function get_profile_data() {
 		return BP_XProfile_ProfileData::get_all_for_user( $this->id );
 	}
 
-	/** Static Functions ******************************************************/
+	/** Static Methods ********************************************************/
 
-	function get_users( $type, $limit = 0, $page = 1, $user_id = 0, $include = false, $search_terms = false, $populate_extras = true, $exclude = false, $meta_key = false, $meta_value = false ) {
+	public static function get_users( $type, $limit = 0, $page = 1, $user_id = 0, $include = false, $search_terms = false, $populate_extras = true, $exclude = false, $meta_key = false, $meta_value = false ) {
 		global $wpdb, $bp;
 
 		$sql = array();
 
 		$sql['select_main'] = "SELECT DISTINCT u.ID as id, u.user_registered, u.user_nicename, u.user_login, u.display_name, u.user_email";
 
-		if ( 'active' == $type || 'online' == $type || 'newest' == $type  )
+		if ( 'active' == $type || 'online' == $type || 'newest' == $type  ) {
 			$sql['select_active'] = ", um.meta_value as last_activity";
+		}
 
-		if ( 'popular' == $type )
+		if ( 'popular' == $type ) {
 			$sql['select_popular'] = ", um.meta_value as total_friend_count";
+		}
 
-		if ( 'alphabetical' == $type )
+		if ( 'alphabetical' == $type ) {
 			$sql['select_alpha'] = ", pd.value as fullname";
+		}
 
 		if ( $meta_key ) {
 			$sql['select_meta'] = ", umm.meta_key";
 
-			if ( $meta_value )
+			if ( $meta_value ) {
 				$sql['select_meta'] .= ", umm.meta_value";
+			}
 		}
 
-		$sql['from'] = "FROM $wpdb->users u LEFT JOIN $wpdb->usermeta um ON um.user_id = u.ID";
+		$sql['from'] = "FROM {$wpdb->users} u LEFT JOIN {$wpdb->usermeta} um ON um.user_id = u.ID";
 
 		// We search against xprofile fields, so we must join the table
-		if ( $search_terms && bp_is_active( 'xprofile' ) )
+		if ( $search_terms && bp_is_active( 'xprofile' ) ) {
 			$sql['join_profiledata_search'] = "LEFT JOIN {$bp->profile->table_name_data} spd ON u.ID = spd.user_id";
+		}
 
 		// Alphabetical sorting is done by the xprofile Full Name field
-		if ( 'alphabetical' == $type )
+		if ( 'alphabetical' == $type ) {
 			$sql['join_profiledata_alpha'] = "LEFT JOIN {$bp->profile->table_name_data} pd ON u.ID = pd.user_id";
+		}
 
-		if ( $meta_key )
+		if ( $meta_key ) {
 			$sql['join_meta'] = "LEFT JOIN {$wpdb->usermeta} umm ON umm.user_id = u.ID";
+		}
 
 		$sql['where'] = 'WHERE ' . bp_core_get_status_sql( 'u.' );
 
-		if ( 'active' == $type || 'online' == $type || 'newest' == $type )
+		if ( 'active' == $type || 'online' == $type || 'newest' == $type ) {
 			$sql['where_active'] = $wpdb->prepare( "AND um.meta_key = %s", bp_get_user_meta_key( 'last_activity' ) );
-
-		if ( 'popular' == $type )
-			$sql['where_popular'] = $wpdb->prepare( "AND um.meta_key = %s", bp_get_user_meta_key( 'total_friend_count' ) );
-
-		if ( 'online' == $type )
-			$sql['where_online'] = "AND DATE_ADD( um.meta_value, INTERVAL 5 MINUTE ) >= UTC_TIMESTAMP()";
-
-		if ( 'alphabetical' == $type )
-			$sql['where_alpha'] = "AND pd.field_id = 1";
-
-		if ( !empty( $exclude ) )
-			$sql['where_exclude'] = "AND u.ID NOT IN ({$exclude})";
-
-		if ( $include ) {
-			if ( is_array( $include ) )
-				$uids = $wpdb->escape( implode( ',', (array)$include ) );
-			else
-				$uids = $wpdb->escape( $include );
-
-			if ( !empty( $uids ) )
-				$sql['where_users'] = "AND u.ID IN ({$uids})";
 		}
 
-		else if ( $user_id && bp_is_active( 'friends' ) ) {
-			$friend_ids = friends_get_friend_user_ids( $user_id );
-			$friend_ids = $wpdb->escape( implode( ',', (array)$friend_ids ) );
+		if ( 'popular' == $type ) {
+			$sql['where_popular'] = $wpdb->prepare( "AND um.meta_key = %s", bp_get_user_meta_key( 'total_friend_count' ) );
+		}
 
-			if ( !empty( $friend_ids ) )
+		if ( 'online' == $type ) {
+			$sql['where_online'] = "AND DATE_ADD( um.meta_value, INTERVAL 5 MINUTE ) >= UTC_TIMESTAMP()";
+		}
+
+		if ( 'alphabetical' == $type ) {
+			$sql['where_alpha'] = "AND pd.field_id = 1";
+		}
+
+		if ( !empty( $exclude ) ) {
+			$sql['where_exclude'] = "AND u.ID NOT IN ({$exclude})";
+		}
+
+		if ( !empty( $include ) ) {
+			if ( is_array( $include ) ) {
+				$uids = $wpdb->escape( implode( ',', (array) $include ) );
+			} else {
+				$uids = $wpdb->escape( $include );
+			}
+
+			if ( !empty( $uids ) ) {
+				$sql['where_users'] = "AND u.ID IN ({$uids})";
+			}
+		} elseif ( !empty( $user_id ) && bp_is_active( 'friends' ) ) {
+			$friend_ids = friends_get_friend_user_ids( $user_id );
+			$friend_ids = $wpdb->escape( implode( ',', (array) $friend_ids ) );
+
+			if ( !empty( $friend_ids ) ) {
 				$sql['where_friends'] = "AND u.ID IN ({$friend_ids})";
 
 			// User has no friends, return false since there will be no users to fetch.
-			else
+			} else {
 				return false;
-
+			}
 		}
 
-		if ( $search_terms && bp_is_active( 'xprofile' ) ) {
+		if ( !empty( $search_terms ) && bp_is_active( 'xprofile' ) ) {
 			$search_terms             = like_escape( $wpdb->escape( $search_terms ) );
 			$sql['where_searchterms'] = "AND spd.value LIKE '%%$search_terms%%'";
 		}
 
-		if ( $meta_key ) {
+		if ( !empty( $meta_key ) ) {
 			$sql['where_meta'] = $wpdb->prepare( " AND umm.meta_key = %s", $meta_key );
 
 			// If a meta value is provided, match it
@@ -306,32 +310,37 @@ class BP_Core_User {
 				break;
 		}
 
-		if ( $limit && $page )
+		if ( !empty( $limit ) && !empty( $page ) ) {
 			$sql['pagination'] = $wpdb->prepare( "LIMIT %d, %d", intval( ( $page - 1 ) * $limit), intval( $limit ) );
+		}
 
 		// Get paginated results
-		$paged_users_sql = apply_filters( 'bp_core_get_paged_users_sql', join( ' ', (array)$sql ), $sql );
+		$paged_users_sql = apply_filters( 'bp_core_get_paged_users_sql', join( ' ', (array) $sql ), $sql );
 		$paged_users     = $wpdb->get_results( $paged_users_sql );
 
 		// Re-jig the SQL so we can get the total user count
 		unset( $sql['select_main'] );
 
-		if ( !empty( $sql['select_active'] ) )
+		if ( !empty( $sql['select_active'] ) ) {
 			unset( $sql['select_active'] );
+		}
 
-		if ( !empty( $sql['select_popular'] ) )
+		if ( !empty( $sql['select_popular'] ) ) {
 			unset( $sql['select_popular'] );
+		}
 
-		if ( !empty( $sql['select_alpha'] ) )
+		if ( !empty( $sql['select_alpha'] ) ) {
 			unset( $sql['select_alpha'] );
+		}
 
-		if ( !empty( $sql['pagination'] ) )
+		if ( !empty( $sql['pagination'] ) ) {
 			unset( $sql['pagination'] );
+		}
 
 		array_unshift( $sql, "SELECT COUNT(DISTINCT u.ID)" );
 
 		// Get total user results
-		$total_users_sql = apply_filters( 'bp_core_get_total_users_sql', join( ' ', (array)$sql ), $sql );
+		$total_users_sql = apply_filters( 'bp_core_get_total_users_sql', join( ' ', (array) $sql ), $sql );
 		$total_users     = $wpdb->get_var( $total_users_sql );
 
 		/***
@@ -341,10 +350,11 @@ class BP_Core_User {
 		if ( !empty( $populate_extras ) ) {
 			$user_ids = array();
 
-			foreach ( (array)$paged_users as $user )
+			foreach ( (array) $paged_users as $user ) {
 				$user_ids[] = $user->id;
+			}
 
-			$user_ids = $wpdb->escape( join( ',', (array)$user_ids ) );
+			$user_ids = $wpdb->escape( join( ',', (array) $user_ids ) );
 
 			// Add additional data to the returned results
 			$paged_users = BP_Core_User::get_user_extras( $paged_users, $user_ids, $type );
@@ -367,12 +377,13 @@ class BP_Core_User {
 	 * @return mixed False on error, otherwise associative array of results.
 	 * @static
 	 */
-	function get_users_by_letter( $letter, $limit = null, $page = 1, $populate_extras = true, $exclude = '' ) {
+	public static function get_users_by_letter( $letter, $limit = null, $page = 1, $populate_extras = true, $exclude = '' ) {
 		global $bp, $wpdb;
 
 		$pag_sql = '';
-		if ( $limit && $page )
+		if ( $limit && $page ) {
 			$pag_sql = $wpdb->prepare( " LIMIT %d, %d", intval( ( $page - 1 ) * $limit), intval( $limit ) );
+		}
 
 		// Multibyte compliance
 		if ( function_exists( 'mb_strlen' ) ) {
@@ -397,18 +408,22 @@ class BP_Core_User {
 		$paged_users = $wpdb->get_results( $paged_users_sql );
 
 		/***
-		 * Lets fetch some other useful data in a separate queries, this will be faster than querying the data for every user in a list.
-		 * We can't add these to the main query above since only users who have this information will be returned (since the much of the data is in usermeta and won't support any type of directional join)
+		 * Lets fetch some other useful data in a separate queries, this will be
+		 * faster than querying the data for every user in a list. We can't add
+		 * these to the main query above since only users who have this
+		 * information will be returned (since the much of the data is in
+		 * usermeta and won't support any type of directional join)
 		 */
 		$user_ids = array();
-		foreach ( (array)$paged_users as $user )
+		foreach ( (array) $paged_users as $user )
 			$user_ids[] = $user->id;
 
-		$user_ids = $wpdb->escape( join( ',', (array)$user_ids ) );
+		$user_ids = $wpdb->escape( join( ',', (array) $user_ids ) );
 
-		/* Add additional data to the returned results */
-		if ( $populate_extras )
+		// Add additional data to the returned results
+		if ( $populate_extras ) {
 			$paged_users = BP_Core_User::get_user_extras( $paged_users, $user_ids );
+		}
 
 		return array( 'users' => $paged_users, 'total' => $total_users );
 	}
@@ -416,7 +431,6 @@ class BP_Core_User {
 	/**
 	 * Get details of specific users from the database
 	 *
-	 * @global object $bp Global BuddyPress settings object
 	 * @global wpdb $wpdb WordPress database object
 	 * @param array $user_ids The user IDs of the users who we wish to fetch information on.
 	 * @param integer $limit The limit of results we want.
@@ -425,13 +439,14 @@ class BP_Core_User {
 	 * @return array Associative array
 	 * @static
 	 */
-	function get_specific_users( $user_ids, $limit = null, $page = 1, $populate_extras = true ) {
-		global $bp, $wpdb;
+	public static function get_specific_users( $user_ids, $limit = null, $page = 1, $populate_extras = true ) {
+		global $wpdb;
 
 		$pag_sql = '';
 		if ( $limit && $page )
 			$pag_sql = $wpdb->prepare( " LIMIT %d, %d", intval( ( $page - 1 ) * $limit), intval( $limit ) );
 
+		// @todo remove? $user_sql is not used here
 		$user_sql   = " AND user_id IN ( " . $wpdb->escape( $user_ids ) . " ) ";
 		$status_sql = bp_core_get_status_sql();
 
@@ -442,13 +457,17 @@ class BP_Core_User {
 		$paged_users = $wpdb->get_results( $paged_users_sql );
 
 		/***
-		 * Lets fetch some other useful data in a separate queries, this will be faster than querying the data for every user in a list.
-		 * We can't add these to the main query above since only users who have this information will be returned (since the much of the data is in usermeta and won't support any type of directional join)
+		 * Lets fetch some other useful data in a separate queries, this will be
+		 * faster than querying the data for every user in a list. We can't add
+		 * these to the main query above since only users who have this
+		 * information will be returned (since the much of the data is in
+		 * usermeta and won't support any type of directional join)
 		 */
 
-		/* Add additional data to the returned results */
-		if ( $populate_extras )
+		// Add additional data to the returned results
+		if ( !empty( $populate_extras ) ) {
 			$paged_users = BP_Core_User::get_user_extras( $paged_users, $user_ids );
+		}
 
 		return array( 'users' => $paged_users, 'total' => $total_users );
 	}
@@ -465,7 +484,7 @@ class BP_Core_User {
 	 * @return array Associative array
 	 * @static
 	 */
-	function search_users( $search_terms, $limit = null, $page = 1, $populate_extras = true ) {
+	public static function search_users( $search_terms, $limit = null, $page = 1, $populate_extras = true ) {
 		global $bp, $wpdb;
 
 		$pag_sql = $limit && $page ? $wpdb->prepare( " LIMIT %d, %d", intval( ( $page - 1 ) * intval( $limit ) ), intval( $limit ) ) : '';
@@ -483,10 +502,10 @@ class BP_Core_User {
 		 * Lets fetch some other useful data in a separate queries, this will be faster than querying the data for every user in a list.
 		 * We can't add these to the main query above since only users who have this information will be returned (since the much of the data is in usermeta and won't support any type of directional join)
 		 */
-		foreach ( (array)$paged_users as $user )
+		foreach ( (array) $paged_users as $user )
 			$user_ids[] = $user->id;
 
-		$user_ids = $wpdb->escape( join( ',', (array)$user_ids ) );
+		$user_ids = $wpdb->escape( join( ',', (array) $user_ids ) );
 
 		// Add additional data to the returned results
 		if ( $populate_extras )
@@ -508,7 +527,7 @@ class BP_Core_User {
 	 * @return mixed False on error, otherwise associative array of results.
 	 * @static
 	 */
-	function get_user_extras( &$paged_users, &$user_ids, $type = false ) {
+	public static function get_user_extras( &$paged_users, &$user_ids, $type = false ) {
 		global $bp, $wpdb;
 
 		if ( empty( $user_ids ) )
@@ -518,7 +537,7 @@ class BP_Core_User {
 		if ( bp_is_active( 'xprofile' ) && 'alphabetical' != $type ) {
 			$names = $wpdb->get_results( $wpdb->prepare( "SELECT pd.user_id as id, pd.value as fullname FROM {$bp->profile->table_name_fields} pf, {$bp->profile->table_name_data} pd WHERE pf.id = pd.field_id AND pf.name = %s AND pd.user_id IN ( {$user_ids} )", bp_xprofile_fullname_field_name() ) );
 			for ( $i = 0, $count = count( $paged_users ); $i < $count; ++$i ) {
-				foreach ( (array)$names as $name ) {
+				foreach ( (array) $names as $name ) {
 					if ( $name->id == $paged_users[$i]->id )
 						$paged_users[$i]->fullname = $name->fullname;
 				}
@@ -529,9 +548,9 @@ class BP_Core_User {
 		if ( 'popular' != $type ) {
 			$friend_count = $wpdb->get_results( $wpdb->prepare( "SELECT user_id as id, meta_value as total_friend_count FROM {$wpdb->usermeta} WHERE meta_key = %s AND user_id IN ( {$user_ids} )", bp_get_user_meta_key( 'total_friend_count' ) ) );
 			for ( $i = 0, $count = count( $paged_users ); $i < $count; ++$i ) {
-				foreach ( (array)$friend_count as $fcount ) {
+				foreach ( (array) $friend_count as $fcount ) {
 					if ( $fcount->id == $paged_users[$i]->id )
-						$paged_users[$i]->total_friend_count = (int)$fcount->total_friend_count;
+						$paged_users[$i]->total_friend_count = (int) $fcount->total_friend_count;
 				}
 			}
 		}
@@ -540,7 +559,7 @@ class BP_Core_User {
 		if ( bp_is_active( 'friends' ) ) {
 			$friend_status = $wpdb->get_results( $wpdb->prepare( "SELECT initiator_user_id, friend_user_id, is_confirmed FROM {$bp->friends->table_name} WHERE (initiator_user_id = %d AND friend_user_id IN ( {$user_ids} ) ) OR (initiator_user_id IN ( {$user_ids} ) AND friend_user_id = %d )", bp_loggedin_user_id(), bp_loggedin_user_id() ) );
 			for ( $i = 0, $count = count( $paged_users ); $i < $count; ++$i ) {
-				foreach ( (array)$friend_status as $status ) {
+				foreach ( (array) $friend_status as $status ) {
 					if ( $status->initiator_user_id == $paged_users[$i]->id || $status->friend_user_id == $paged_users[$i]->id )
 						$paged_users[$i]->is_friend = $status->is_confirmed;
 				}
@@ -550,7 +569,7 @@ class BP_Core_User {
 		if ( 'active' != $type ) {
 			$user_activity = $wpdb->get_results( $wpdb->prepare( "SELECT user_id as id, meta_value as last_activity FROM {$wpdb->usermeta} WHERE meta_key = %s AND user_id IN ( {$user_ids} )", bp_get_user_meta_key( 'last_activity' ) ) );
 			for ( $i = 0, $count = count( $paged_users ); $i < $count; ++$i ) {
-				foreach ( (array)$user_activity as $activity ) {
+				foreach ( (array) $user_activity as $activity ) {
 					if ( $activity->id == $paged_users[$i]->id )
 						$paged_users[$i]->last_activity = $activity->last_activity;
 				}
@@ -561,7 +580,7 @@ class BP_Core_User {
 		if ( 'active' != $type ) {
 			$user_activity = $wpdb->get_results( $wpdb->prepare( "SELECT user_id as id, meta_value as last_activity FROM {$wpdb->usermeta} WHERE meta_key = %s AND user_id IN ( {$user_ids} )", bp_get_user_meta_key( 'last_activity' ) ) );
 			for ( $i = 0, $count = count( $paged_users ); $i < $count; ++$i ) {
-				foreach ( (array)$user_activity as $activity ) {
+				foreach ( (array) $user_activity as $activity ) {
 					if ( $activity->id == $paged_users[$i]->id )
 						$paged_users[$i]->last_activity = $activity->last_activity;
 				}
@@ -571,7 +590,7 @@ class BP_Core_User {
 		// Fetch the user's latest update
 		$user_update = $wpdb->get_results( $wpdb->prepare( "SELECT user_id as id, meta_value as latest_update FROM {$wpdb->usermeta} WHERE meta_key = %s AND user_id IN ( {$user_ids} )", bp_get_user_meta_key( 'bp_latest_update' ) ) );
 		for ( $i = 0, $count = count( $paged_users ); $i < $count; ++$i ) {
-			foreach ( (array)$user_update as $update ) {
+			foreach ( (array) $user_update as $update ) {
 				if ( $update->id == $paged_users[$i]->id )
 					$paged_users[$i]->latest_update = $update->latest_update;
 			}
@@ -588,7 +607,7 @@ class BP_Core_User {
 	 * @return array Associative array
 	 * @static
 	 */
-	function get_core_userdata( $user_id ) {
+	public static function get_core_userdata( $user_id ) {
 		global $wpdb;
 
 		if ( !$user = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE ID = %d LIMIT 1", $user_id ) ) )
@@ -664,27 +683,48 @@ class BP_Core_Notification {
 	 */
 	var $is_new;
 
-
-	/**
-	 * PHP4 constructor
-	 *
-	 * @param integer $id
-	 */
-	function bp_core_notification( $id = 0 ) {
-		$this->__construct($id);
-	}
+	/** Public Methods ********************************************************/
 
 	/**
 	 * Constructor
 	 *
 	 * @param integer $id
 	 */
-	function __construct( $id = 0 ) {
-		if ( $id ) {
+	public function __construct( $id = 0 ) {
+		if ( !empty( $id ) ) {
 			$this->id = $id;
 			$this->populate();
 		}
 	}
+
+	/**
+	 * Update or insert notification details into the database.
+	 *
+	 * @global object $bp Global BuddyPress settings object
+	 * @global wpdb $wpdb WordPress database object
+	 * @return bool Success or failure
+	 */
+	public function save() {
+		global $bp, $wpdb;
+
+		// Update
+		if ( !empty( $this->id ) ) {
+			$sql = $wpdb->prepare( "UPDATE {$bp->core->table_name_notifications} SET item_id = %d, secondary_item_id = %d, user_id = %d, component_name = %s, component_action = %d, date_notified = %s, is_new = %d ) WHERE id = %d", $this->item_id, $this->secondary_item_id, $this->user_id, $this->component_name, $this->component_action, $this->date_notified, $this->is_new, $this->id );
+
+		// Save
+		} else {
+			$sql = $wpdb->prepare( "INSERT INTO {$bp->core->table_name_notifications} ( item_id, secondary_item_id, user_id, component_name, component_action, date_notified, is_new ) VALUES ( %d, %d, %d, %s, %s, %s, %d )", $this->item_id, $this->secondary_item_id, $this->user_id, $this->component_name, $this->component_action, $this->date_notified, $this->is_new );
+		}
+
+		if ( !$result = $wpdb->query( $sql ) )
+			return false;
+
+		$this->id = $wpdb->insert_id;
+
+		return true;
+	}
+
+	/** Private Methods *******************************************************/
 
 	/**
 	 * Fetches the notification data from the database.
@@ -692,7 +732,7 @@ class BP_Core_Notification {
 	 * @global object $bp Global BuddyPress settings object
 	 * @global wpdb $wpdb WordPress database object
 	 */
-	function populate() {
+	private function populate() {
 		global $bp, $wpdb;
 
 		if ( $notification = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$bp->core->table_name_notifications} WHERE id = %d", $this->id ) ) ) {
@@ -706,34 +746,9 @@ class BP_Core_Notification {
 		}
 	}
 
-	/**
-	 * Update or insert notification details into the database.
-	 *
-	 * @global object $bp Global BuddyPress settings object
-	 * @global wpdb $wpdb WordPress database object
-	 * @return bool Success or failure
-	 */
-	function save() {
-		global $bp, $wpdb;
+	/** Static Methods ********************************************************/
 
-		// Update
-		if ( $this->id )
-			$sql = $wpdb->prepare( "UPDATE {$bp->core->table_name_notifications} SET item_id = %d, secondary_item_id = %d, user_id = %d, component_name = %s, component_action = %d, date_notified = %s, is_new = %d ) WHERE id = %d", $this->item_id, $this->secondary_item_id, $this->user_id, $this->component_name, $this->component_action, $this->date_notified, $this->is_new, $this->id );
-
-		// Save
-		else
-			$sql = $wpdb->prepare( "INSERT INTO {$bp->core->table_name_notifications} ( item_id, secondary_item_id, user_id, component_name, component_action, date_notified, is_new ) VALUES ( %d, %d, %d, %s, %s, %s, %d )", $this->item_id, $this->secondary_item_id, $this->user_id, $this->component_name, $this->component_action, $this->date_notified, $this->is_new );
-
-		if ( !$result = $wpdb->query( $sql ) )
-			return false;
-
-		$this->id = $wpdb->insert_id;
-		return true;
-	}
-
-	/** Static functions ******************************************************/
-
-	function check_access( $user_id, $notification_id ) {
+	public static function check_access( $user_id, $notification_id ) {
 		global $wpdb, $bp;
 
 		return $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM {$bp->core->table_name_notifications} WHERE id = %d AND user_id = %d", $notification_id, $user_id ) );
@@ -749,7 +764,7 @@ class BP_Core_Notification {
 	 * @return array Associative array
 	 * @static
 	 */
-	function get_all_for_user( $user_id, $status = 'is_new' ) {
+	public static function get_all_for_user( $user_id, $status = 'is_new' ) {
 		global $bp, $wpdb;
 
 		$is_new = 'is_new' == $status ? ' AND is_new = 1 ' : '';
@@ -767,7 +782,7 @@ class BP_Core_Notification {
 	 * @param string $component_action
 	 * @static
 	 */
-	function delete_for_user_by_type( $user_id, $component_name, $component_action ) {
+	public static function delete_for_user_by_type( $user_id, $component_name, $component_action ) {
 		global $bp, $wpdb;
 
 		return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->core->table_name_notifications} WHERE user_id = %d AND component_name = %s AND component_action = %s", $user_id, $component_name, $component_action ) );
@@ -785,7 +800,7 @@ class BP_Core_Notification {
 	 * @param integer $secondary_item_id (optional) The secondary item id of the notifications that we wish to use to delete.
 	 * @static
 	 */
-	function delete_for_user_by_item_id( $user_id, $item_id, $component_name, $component_action, $secondary_item_id = false ) {
+	public static function delete_for_user_by_item_id( $user_id, $item_id, $component_name, $component_action, $secondary_item_id = false ) {
 		global $bp, $wpdb;
 
 		$secondary_item_sql = !empty( $secondary_item_id ) ? $wpdb->prepare( " AND secondary_item_id = %d", $secondary_item_id ) : '';
@@ -803,7 +818,7 @@ class BP_Core_Notification {
 	 * @param string $component_action The action of the component the notification was sent from.
 	 * @static
 	 */
-	function delete_from_user_by_type( $user_id, $component_name, $component_action ) {
+	public static function delete_from_user_by_type( $user_id, $component_name, $component_action ) {
 		global $bp, $wpdb;
 
 		return $wpdb->query( $wpdb->prepare( "DELETE FROM {$bp->core->table_name_notifications} WHERE item_id = %d AND component_name = %s AND component_action = %s", $user_id, $component_name, $component_action ) );
@@ -820,7 +835,7 @@ class BP_Core_Notification {
 	 * @param string $secondary_item_id Optional secondary item id that the notifications are to have.
 	 * @static
 	 */
-	function delete_all_by_type( $item_id, $component_name, $component_action, $secondary_item_id ) {
+	public static function delete_all_by_type( $item_id, $component_name, $component_action, $secondary_item_id ) {
 		global $bp, $wpdb;
 
 		if ( $component_action )
@@ -972,11 +987,7 @@ class BP_Button {
 	 * @param array $args
 	 * @return bool False if not allowed
 	 */
-	function bp_button( $args = '' ) {
-		$this->__construct($args);
-	}
-
-	function __construct( $args = '' ) {
+	public function __construct( $args = '' ) {
 
 		// Default arguments
 		$defaults = array(
@@ -1027,14 +1038,16 @@ class BP_Button {
 		if ( false !== $this->wrapper ) {
 
 			// Wrapper ID
-			if ( !empty( $wrapper_id ) )
+			if ( !empty( $wrapper_id ) ) {
 				$this->wrapper_id    = ' id="' . $wrapper_id . '"';
+			}
 
 			// Wrapper class
-			if ( !empty( $wrapper_class ) )
+			if ( !empty( $wrapper_class ) ) {
 				$this->wrapper_class = ' class="generic-button ' . $wrapper_class . '"';
-			else
+			} else {
 				$this->wrapper_class = ' class="generic-button"';
+			}
 
 			// Set before and after
 			$before = '<' . $wrapper . $this->wrapper_class . $this->wrapper_id . '>';
@@ -1078,7 +1091,7 @@ class BP_Button {
 	 *
 	 * @return string
 	 */
-	function contents() {
+	public function contents() {
 		return $this->contents;
 	}
 
@@ -1087,7 +1100,7 @@ class BP_Button {
 	 *
 	 * Output contents of button
 	 */
-	function display() {
+	public function display() {
 		if ( !empty( $this->contents ) )
 			echo $this->contents;
 	}
@@ -1103,12 +1116,13 @@ class BP_Button {
  * @see WP_Embed
  */
 class BP_Embed extends WP_Embed {
+
 	/**
 	 * Constructor
 	 *
 	 * @global unknown $wp_embed
 	 */
-	function __construct() {
+	public function __construct() {
 		global $wp_embed;
 
 		// Make sure we populate the WP_Embed handlers array.
@@ -1157,7 +1171,7 @@ class BP_Embed extends WP_Embed {
 	 * @param string $url The URL attempting to be embeded.
 	 * @return string The embed HTML on success, otherwise the original URL.
 	 */
-	function shortcode( $attr, $url = '' ) {
+	public function shortcode( $attr, $url = '' ) {
 		if ( empty( $url ) )
 			return '';
 
@@ -1173,8 +1187,9 @@ class BP_Embed extends WP_Embed {
 		foreach ( $this->handlers as $priority => $handlers ) {
 			foreach ( $handlers as $hid => $handler ) {
 				if ( preg_match( $handler['regex'], $url, $matches ) && is_callable( $handler['callback'] ) ) {
-					if ( false !== $return = call_user_func( $handler['callback'], $matches, $attr, $url, $rawattr ) )
+					if ( false !== $return = call_user_func( $handler['callback'], $matches, $attr, $url, $rawattr ) ) {
 						return apply_filters( 'embed_handler_html', $return, $url, $attr );
+					}
 				}
 			}
 		}
@@ -1192,7 +1207,7 @@ class BP_Embed extends WP_Embed {
 		// If oEmbed discovery is true, skip oEmbed provider check
 		$is_oembed_link = false;
 		if ( !$attr['discover'] ) {
-			foreach ( (array)$oembed_obj->providers as $provider_matchmask => $provider ) {
+			foreach ( (array) $oembed_obj->providers as $provider_matchmask => $provider ) {
 				$regex = ( $is_regex = $provider[1] ) ? $provider_matchmask : '#' . str_replace( '___wildcard___', '(.+)', preg_quote( str_replace( '*', '___wildcard___', $provider_matchmask ), '#' ) ) . '#i';
 
 				if ( preg_match( $regex, $url ) )
@@ -1221,7 +1236,7 @@ class BP_Embed extends WP_Embed {
 	 * @param array $rawattr Untouched shortcode attributes from {@link WP_Embed::shortcode()}.
 	 * @return string The embed HTML on success, otherwise the original URL.
 	 */
-	function parse_oembed( $id, $url, $attr, $rawattr ) {
+	public function parse_oembed( $id, $url, $attr, $rawattr ) {
 		$id = intval( $id );
 
 		if ( $id ) {
@@ -1254,4 +1269,5 @@ class BP_Embed extends WP_Embed {
 		return $this->maybe_make_link( $url );
 	}
 }
+
 ?>

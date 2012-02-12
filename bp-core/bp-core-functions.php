@@ -57,61 +57,6 @@ function bp_db_version() {
 /** Functions *****************************************************************/
 
 /**
- * Retrieve an option
- *
- * This is a wrapper for get_blog_option(), which in turn stores settings data (such as bp-pages)
- * on the appropriate blog, given your current setup.
- *
- * The 'bp_get_option' filter is primarily for backward-compatibility.
- *
- * @package BuddyPress
- * @since 1.5
- *
- * @uses bp_get_root_blog_id()
- * @param str $option_name The option to be retrieved
- * @param str $default Optional. Default value to be returned if the option isn't set
- * @return mixed The value for the option
- */
-function bp_get_option( $option_name, $default = '' ) {
-	$value = get_blog_option( bp_get_root_blog_id(), $option_name, $default );
-
-	return apply_filters( 'bp_get_option', $value );
-}
-
-/**
- * Save an option
- *
- * This is a wrapper for update_blog_option(), which in turn stores settings data (such as bp-pages)
- * on the appropriate blog, given your current setup.
- *
- * @package BuddyPress
- * @since 1.5
- *
- * @uses bp_get_root_blog_id()
- * @param str $option_name The option key to be set
- * @param str $value The value to be set
- */
-function bp_update_option( $option_name, $value ) {
-	update_blog_option( bp_get_root_blog_id(), $option_name, $value );
-}
-
-/**
- * Delete an option
- *
- * This is a wrapper for delete_blog_option(), which in turn deletes settings data (such as
- * bp-pages) on the appropriate blog, given your current setup.
- *
- * @package BuddyPress
- * @since 1.5
- *
- * @uses bp_get_root_blog_id()
- * @param str $option_name The option key to be set
- */
-function bp_delete_option( $option_name ) {
-	delete_blog_option( bp_get_root_blog_id(), $option_name );
-}
-
-/**
  * Allow filtering of database prefix. Intended for use in multinetwork installations.
  *
  * @global object $wpdb WordPress database object
@@ -128,27 +73,13 @@ function bp_core_get_table_prefix() {
  *
  * @package BuddyPress Core
  * @since 1.5
- *
- * @todo Remove the "Upgrading from an earlier version of BP pre-1.5" block. Temporary measure for
- *       people running trunk installations. Leave for a version or two, then remove.
  */
 function bp_core_get_directory_page_ids() {
 	$page_ids = bp_get_option( 'bp-pages' );
 
-  	// Upgrading from an earlier version of BP pre-1.5
-	if ( !isset( $page_ids['members'] ) && $ms_page_ids = get_site_option( 'bp-pages' ) ) {
-		$page_blog_id = bp_is_multiblog_mode() ? get_current_blog_id() : bp_get_root_blog_id();
-
-		if ( isset( $ms_page_ids[$page_blog_id] ) ) {
-			$page_ids = $ms_page_ids[$page_blog_id];
-
-			bp_update_option( 'bp-pages', $page_ids );
-		}
-  	}
-
 	// Ensure that empty indexes are unset. Should only matter in edge cases
-	if ( $page_ids && is_array( $page_ids ) ) {
-		foreach( (array)$page_ids as $component_name => $page_id ) {
+	if ( !empty( $page_ids ) && is_array( $page_ids ) ) {
+		foreach( (array) $page_ids as $component_name => $page_id ) {
 			if ( empty( $component_name ) || empty( $page_id ) ) {
 				unset( $page_ids[$component_name] );
 			}
@@ -182,22 +113,23 @@ function bp_core_update_directory_page_ids( $blog_page_ids ) {
  * @return obj $pages Page names, IDs, and slugs
  */
 function bp_core_get_directory_pages() {
-	global $wpdb, $bp;
+	global $wpdb;
 
 	// Set pages as standard class
 	$pages = new stdClass;
 
 	// Get pages and IDs
-	if ( $page_ids = bp_core_get_directory_page_ids() ) {
+	$page_ids = bp_core_get_directory_page_ids();
+	if ( !empty( $page_ids ) ) {
 
 		// Always get page data from the root blog, except on multiblog mode, when it comes
 		// from the current blog
 		$posts_table_name = bp_is_multiblog_mode() ? $wpdb->posts : $wpdb->get_blog_prefix( bp_get_root_blog_id() ) . 'posts';
-		$page_ids_sql     = implode( ',', (array)$page_ids );
+		$page_ids_sql     = implode( ',', (array) $page_ids );
 		$page_names       = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_name, post_parent, post_title FROM {$posts_table_name} WHERE ID IN ({$page_ids_sql}) AND post_status = 'publish' " ) );
 
-		foreach ( (array)$page_ids as $component_id => $page_id ) {
-			foreach ( (array)$page_names as $page_name ) {
+		foreach ( (array) $page_ids as $component_id => $page_id ) {
+			foreach ( (array) $page_names as $page_name ) {
 				if ( $page_name->ID == $page_id ) {
 					$pages->{$component_id}->name  = $page_name->post_name;
 					$pages->{$component_id}->id    = $page_name->ID;
@@ -211,7 +143,7 @@ function bp_core_get_directory_pages() {
 						$page_name->post_parent = $parent[0]->post_parent;
 					}
 
-					$pages->{$component_id}->slug = implode( '/', array_reverse( (array)$slug ) );
+					$pages->{$component_id}->slug = implode( '/', array_reverse( (array) $slug ) );
 				}
 
 				unset( $slug );
@@ -261,7 +193,6 @@ function bp_core_component_slug_from_root_slug( $root_slug ) {
  * @return $domain The domain URL for the blog.
  */
 function bp_core_get_root_domain() {
-	global $wpdb;
 
 	$domain = get_home_url( bp_get_root_blog_id() );
 
@@ -413,7 +344,7 @@ function bp_core_time_since( $older_date, $newer_date = false ) {
 	if ( !empty( $older_date ) && !is_numeric( $older_date ) ) {
 		$time_chunks = explode( ':', str_replace( ' ', ':', $older_date ) );
 		$date_chunks = explode( '-', str_replace( ' ', '-', $older_date ) );
-		$older_date  = gmmktime( (int)$time_chunks[1], (int)$time_chunks[2], (int)$time_chunks[3], (int)$date_chunks[1], (int)$date_chunks[2], (int)$date_chunks[0] );
+		$older_date  = gmmktime( (int) $time_chunks[1], (int) $time_chunks[2], (int) $time_chunks[3], (int) $date_chunks[1], (int) $date_chunks[2], (int) $date_chunks[0] );
 	}
 
 	/**
@@ -443,7 +374,8 @@ function bp_core_time_since( $older_date, $newer_date = false ) {
 			$seconds = $chunks[$i][0];
 
 			// Finding the biggest chunk (if the chunk fits, break)
-			if ( ( $count = floor($since / $seconds) ) != 0 ) {
+			$count = floor( $since / $seconds );
+			if ( 0 != $count ) {
 				break;
 			}
 		}
@@ -460,16 +392,17 @@ function bp_core_time_since( $older_date, $newer_date = false ) {
 			// Step two: the second chunk
 			if ( $i + 2 < $j ) {
 				$seconds2 = $chunks[$i + 1][0];
-				$name2 = $chunks[$i + 1][1];
+				$name2    = $chunks[$i + 1][1];
+				$count2   = floor( ( $since - ( $seconds * $count ) ) / $seconds2 );
 
-				if ( ( $count2 = floor( ( $since - ( $seconds * $count ) ) / $seconds2 ) ) != 0 ) {
-					// Add to output var
-					$output .= ( 1 == $count2 ) ? _x( ',', 'Separator in time since', 'buddypress' ) . ' 1 '. $chunks[$i + 1][1] : _x( ',', 'Separator in time since', 'buddypress' ) . ' ' . $count2 . ' ' . $chunks[$i + 1][2];
+				// Add to output var
+				if ( 0 != $count ) {
+					$output .= ( 1 == $count2 ) ? _x( ',', 'Separator in time since', 'buddypress' ) . ' 1 '. $name2 : _x( ',', 'Separator in time since', 'buddypress' ) . ' ' . $count2 . ' ' . $chunks[$i + 1][2];
 				}
 			}
 
 			// No output, so happened right now
-			if ( !(int)trim( $output ) ) {
+			if ( ! (int) trim( $output ) ) {
 				$output = $right_now_text;
 			}
 		}
@@ -493,11 +426,10 @@ function bp_core_time_since( $older_date, $newer_date = false ) {
  * @uses bp_update_user_meta() BP function to update user metadata in the usermeta table.
  */
 function bp_core_record_activity() {
-	global $bp;
 
 	if ( !is_user_logged_in() )
 		return false;
-
+		
 	$user_id = bp_loggedin_user_id();
 
 	if ( bp_is_user_inactive( $user_id ) )
@@ -526,8 +458,9 @@ add_action( 'wp_head', 'bp_core_record_activity' );
  * @uses bp_core_time_since() This function will return an English representation of the time elapsed.
  */
 function bp_core_get_last_activity( $last_activity_date, $string ) {
-	if ( !$last_activity_date || empty( $last_activity_date ) )
-		$last_active = __( 'not recently active', 'buddypress' );
+
+	if ( empty( $last_activity_date ) )
+		$last_active = __( 'Not recently active', 'buddypress' );
 	else
 		$last_active = sprintf( $string, bp_core_time_since( $last_activity_date ) );
 
@@ -539,12 +472,11 @@ function bp_core_get_last_activity( $last_activity_date, $string ) {
  *
  * @package BuddyPress Core
  *
- * @global $bp $bp
  * @global object $current_site
  * @return string
  */
 function bp_core_get_site_path() {
-	global $bp, $current_site;
+	global $current_site;
 
 	if ( is_multisite() )
 		$site_path = $current_site->path;
@@ -620,11 +552,9 @@ function bp_core_add_illegal_names() {
  * A javascript free implementation of the search functions in BuddyPress
  *
  * @package BuddyPress Core
- * @global object $bp Global BuddyPress settings object
  * @param string $slug The slug to redirect to for searching.
  */
 function bp_core_action_search_site( $slug = '' ) {
-	global $bp;
 
 	if ( !bp_is_current_component( bp_get_search_slug() ) )
 		return;
@@ -757,7 +687,7 @@ function bp_core_add_root_component( $slug ) {
 	$match = false;
 
 	// Check if the slug is registered in the $bp->pages global
-	foreach ( (array)$bp->pages as $key => $page ) {
+	foreach ( (array) $bp->pages as $key => $page ) {
 		if ( $key == $slug || $page->slug == $slug )
 			$match = true;
 	}
@@ -779,7 +709,7 @@ function bp_core_create_root_component_page() {
 
 	$new_page_ids = array();
 
-	foreach ( (array)$bp->add_root as $slug )
+	foreach ( (array) $bp->add_root as $slug )
 		$new_page_ids[$slug] = wp_insert_post( array( 'comment_status' => 'closed', 'ping_status' => 'closed', 'post_title' => ucwords( $slug ), 'post_status' => 'publish', 'post_type' => 'page' ) );
 
 	$page_ids = array_merge( (array) $new_page_ids, (array) bp_core_get_directory_page_ids() );
@@ -808,43 +738,21 @@ function bp_is_root_blog( $blog_id = 0 ) {
 	if ( $blog_id == bp_get_root_blog_id() )
 		$is_root_blog = true;
 
-	return apply_filters( 'bp_is_root_blog', (bool) $is_root_blog );
+	return (bool) apply_filters( 'bp_is_root_blog', (bool) $is_root_blog );
 }
 
 /**
  * Is this bp_get_root_blog_id()?
  *
  * @package BuddyPress
- * @since 1.5
+ * @since BuddyPress (1.5)
  *
- * @return bool $is_root_blog Returns true if this is bp_get_root_blog_id().
+ * @return int Return the root site ID
  */
 function bp_get_root_blog_id() {
+	global $bp;
 
-	// Default to 1
-	$root_blog_id = 1;
-
-	// Define on which blog ID BuddyPress should run
-	if ( !defined( 'BP_ROOT_BLOG' ) ) {
-
-		// Root blog is the main site on this network
-		if ( is_multisite() && !bp_is_multiblog_mode() ) {
-			$current_site = get_current_site();
-			$root_blog_id = $current_site->blog_id;
-
-		// Root blog is whatever the current site is (could be any site on the network)
-		} elseif ( is_multisite() && bp_is_multiblog_mode() ) {
-			$root_blog_id = get_current_blog_id();
-		}
-
-		define( 'BP_ROOT_BLOG', $root_blog_id );
-
-	// Root blog is defined
-	} else {
-		$root_blog_id = BP_ROOT_BLOG;
-	}
-
-	return apply_filters( 'bp_get_root_blog_id', (int) $root_blog_id );
+	return (int) apply_filters( 'bp_get_root_blog_id', (int) $bp->root_blog_id );
 }
 
 /**
@@ -988,7 +896,7 @@ function bp_use_wp_admin_bar() {
 		$use_admin_bar = false;
 
 	// Has the admin chosen to use the BuddyBar during an upgrade?
-	elseif ( (bool) bp_get_option( 'bp-force-buddybar', false ) )
+	elseif ( (bool) bp_get_option( '_bp_force_buddybar', false ) )
 		$use_admin_bar = false;
 
 	return apply_filters( 'bp_use_wp_admin_bar', $use_admin_bar );
@@ -1152,7 +1060,7 @@ function bp_update_is_item_mod( $is_item_mod = false, $component = '' ) {
  * @since 1.5
  */
 function bp_do_404( $redirect = 'remove_canonical_direct' ) {
-	global $bp, $wp_query;
+	global $wp_query;
 
 	do_action( 'bp_do_404', $redirect );
 

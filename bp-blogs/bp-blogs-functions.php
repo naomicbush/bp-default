@@ -17,7 +17,6 @@ function bp_blogs_has_directory() {
 }
 
 function bp_blogs_get_blogs( $args = '' ) {
-	global $bp;
 
 	$defaults = array(
 		'type'         => 'active', // active, alphabetical, newest, or random
@@ -55,12 +54,12 @@ function bp_blogs_record_existing_blogs() {
 		$blog_ids = 1;
 
 	if ( $blog_ids ) {
-		foreach( (array)$blog_ids as $blog_id ) {
+		foreach( (array) $blog_ids as $blog_id ) {
 			$users 		= get_users( array( 'blog_id' => $blog_id ) );
 			$subscribers 	= get_users( array( 'blog_id' => $blog_id, 'role' => 'subscriber' ) );
 
 			if ( !empty( $users ) ) {
-				foreach ( (array)$users as $user ) {
+				foreach ( (array) $users as $user ) {
 					// Don't record blogs for subscribers
 					if ( !in_array( $user, $subscribers ) )
 						bp_blogs_record_blog( $blog_id, $user->ID, true );
@@ -73,17 +72,15 @@ function bp_blogs_record_existing_blogs() {
 /**
  * Makes BuddyPress aware of a new site so that it can track its activity.
  *
- * @global object $bp BuddyPress global settings
+ * @since BuddyPress (1.0)
  * @param int $blog_id
  * @param int $user_id
  * @param $bool $no_activity ; optional.
- * @since 1.0
  * @uses BP_Blogs_Blog
  */
 function bp_blogs_record_blog( $blog_id, $user_id, $no_activity = false ) {
-	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = bp_loggedin_user_id();
 
 	$name = get_blog_option( $blog_id, 'blogname' );
@@ -95,16 +92,14 @@ function bp_blogs_record_blog( $blog_id, $user_id, $no_activity = false ) {
 	$recorded_blog          = new BP_Blogs_Blog;
 	$recorded_blog->user_id = $user_id;
 	$recorded_blog->blog_id = $blog_id;
-
-	$recorded_blog_id = $recorded_blog->save();
-
-	$is_recorded = !empty( $recorded_blog_id ) ? true : false;
+	$recorded_blog_id       = $recorded_blog->save();
+	$is_recorded            = !empty( $recorded_blog_id ) ? true : false;
 
 	bp_blogs_update_blogmeta( $recorded_blog->blog_id, 'name', $name );
 	bp_blogs_update_blogmeta( $recorded_blog->blog_id, 'description', $description );
 	bp_blogs_update_blogmeta( $recorded_blog->blog_id, 'last_activity', bp_core_current_time() );
 
-	$is_private = !empty( $_POST['blog_public'] ) && (int)$_POST['blog_public'] ? false : true;
+	$is_private = !empty( $_POST['blog_public'] ) && (int) $_POST['blog_public'] ? false : true;
 	$is_private = !apply_filters( 'bp_is_new_blog_public', !$is_private );
 
 	// Only record this activity if the blog is public
@@ -154,11 +149,11 @@ add_action( 'update_option_blogdescription', 'bp_blogs_update_option_blogdescrip
 function bp_blogs_record_post( $post_id, $post, $user_id = 0 ) {
 	global $bp, $wpdb;
 
-	$post_id = (int)$post_id;
-	$blog_id = (int)$wpdb->blogid;
+	$post_id = (int) $post_id;
+	$blog_id = (int) $wpdb->blogid;
 
 	if ( !$user_id )
-		$user_id = (int)$post->post_author;
+		$user_id = (int) $post->post_author;
 
 	// Stop infinite loops with WordPress MU Sitewide Tags.
 	// That plugin changed the way its settings were stored at some point. Thus the dual check.
@@ -169,7 +164,7 @@ function bp_blogs_record_post( $post_id, $post, $user_id = 0 ) {
 		$tags_blog_id = isset( $bp->site_options['tags_blog_id'] ) ? $bp->site_options['tags_blog_id'] : 0;
 	}
 
-	if ( (int)$blog_id == $tags_blog_id && apply_filters( 'bp_blogs_block_sitewide_tags_activity', true ) )
+	if ( (int) $blog_id == $tags_blog_id && apply_filters( 'bp_blogs_block_sitewide_tags_activity', true ) )
 		return false;
 
 	// Don't record this if it's not a post
@@ -185,15 +180,15 @@ function bp_blogs_record_post( $post_id, $post, $user_id = 0 ) {
 			$post_permalink   = get_permalink( $post_id );
 
 			if ( is_multisite() )
-				$activity_action  = sprintf( __( '%1$s wrote a new post, %2$s, on the site %3$s', 'buddypress' ), bp_core_get_userlink( (int)$post->post_author ), '<a href="' . $post_permalink . '">' . $post->post_title . '</a>', '<a href="' . get_blog_option( $blog_id, 'home' ) . '">' . get_blog_option( $blog_id, 'blogname' ) . '</a>' );
+				$activity_action  = sprintf( __( '%1$s wrote a new post, %2$s, on the site %3$s', 'buddypress' ), bp_core_get_userlink( (int) $post->post_author ), '<a href="' . $post_permalink . '">' . $post->post_title . '</a>', '<a href="' . get_blog_option( $blog_id, 'home' ) . '">' . get_blog_option( $blog_id, 'blogname' ) . '</a>' );
 			else
-				$activity_action  = sprintf( __( '%1$s wrote a new post, %2$s', 'buddypress' ), bp_core_get_userlink( (int)$post->post_author ), '<a href="' . $post_permalink . '">' . $post->post_title . '</a>' );
+				$activity_action  = sprintf( __( '%1$s wrote a new post, %2$s', 'buddypress' ), bp_core_get_userlink( (int) $post->post_author ), '<a href="' . $post_permalink . '">' . $post->post_title . '</a>' );
 
 			// Make sure there's not an existing entry for this post (prevent bumping)
 			if ( bp_is_active( 'activity' ) ) {
 				$existing = bp_activity_get( array(
 					'filter' => array(
-						'user_id'      => (int)$post->post_author,
+						'user_id'      => (int) $post->post_author,
 						'action'       => 'new_blog_post',
 						'primary_id'   => $blog_id,
 						'secondary_id' => $post_id,
@@ -208,7 +203,7 @@ function bp_blogs_record_post( $post_id, $post, $user_id = 0 ) {
 			$activity_content = $post->post_content;
 
 			bp_blogs_record_activity( array(
-				'user_id'           => (int)$post->post_author,
+				'user_id'           => (int) $post->post_author,
 				'action'            => apply_filters( 'bp_blogs_activity_new_post_action',       $activity_action,  $post, $post_permalink ),
 				'content'           => apply_filters( 'bp_blogs_activity_new_post_content',      $activity_content, $post, $post_permalink ),
 				'primary_link'      => apply_filters( 'bp_blogs_activity_new_post_primary_link', $post_permalink,   $post_id               ),
@@ -233,13 +228,11 @@ add_action( 'save_post', 'bp_blogs_record_post', 10, 2 );
  * Record blog comment activity. Checks if blog is public and post is not
  * password protected.
  *
- * @global $bp $bp
  * @param int $comment_id
  * @param bool $is_approved
  * @return mixed
  */
 function bp_blogs_record_comment( $comment_id, $is_approved = true ) {
-	global $bp;
 
 	// Get the users comment
 	$recorded_comment = get_comment( $comment_id );
@@ -254,7 +247,7 @@ function bp_blogs_record_comment( $comment_id, $is_approved = true ) {
 
 	// Get the user_id from the comment author email.
 	$user    = get_user_by( 'email', $recorded_comment->comment_author_email );
-	$user_id = (int)$user->ID;
+	$user_id = (int) $user->ID;
 
 	// If there's no registered user id, don't record activity
 	if ( empty( $user_id ) )
@@ -351,7 +344,7 @@ add_action( 'remove_user_from_blog', 'bp_blogs_remove_user_from_blog', 10, 2 );
 function bp_blogs_remove_blog( $blog_id ) {
 	global $bp;
 
-	$blog_id = (int)$blog_id;
+	$blog_id = (int) $blog_id;
 	do_action( 'bp_blogs_before_remove_blog', $blog_id );
 
 	BP_Blogs_Blog::delete_blog_for_all( $blog_id );
@@ -364,17 +357,21 @@ function bp_blogs_remove_blog( $blog_id ) {
 add_action( 'delete_blog', 'bp_blogs_remove_blog' );
 
 function bp_blogs_remove_blog_for_user( $user_id, $blog_id ) {
-	global $bp, $current_user;
+	global $bp;
 
-	$blog_id = (int)$blog_id;
-	$user_id = (int)$user_id;
+	$blog_id = (int) $blog_id;
+	$user_id = (int) $user_id;
 
 	do_action( 'bp_blogs_before_remove_blog_for_user', $blog_id, $user_id );
 
 	BP_Blogs_Blog::delete_blog_for_user( $blog_id, $user_id );
 
 	// Delete activity stream item
-	bp_blogs_delete_activity( array( 'item_id' => $blog_id, 'component' => $bp->blogs->id, 'type' => 'new_blog' ) );
+	bp_blogs_delete_activity( array(
+		'item_id'   => $blog_id,
+		'component' => $bp->blogs->id,
+		'type'      => 'new_blog'
+	) );
 
 	do_action( 'bp_blogs_remove_blog_for_user', $blog_id, $user_id );
 }
@@ -386,10 +383,10 @@ function bp_blogs_remove_post( $post_id, $blog_id = 0, $user_id = 0 ) {
 	if ( empty( $wpdb->blogid ) )
 		return false;
 
-	$post_id = (int)$post_id;
+	$post_id = (int) $post_id;
 
 	if ( !$blog_id )
-		$blog_id = (int)$wpdb->blogid;
+		$blog_id = (int) $wpdb->blogid;
 
 	if ( !$user_id )
 		$user_id = bp_loggedin_user_id();
@@ -404,7 +401,7 @@ function bp_blogs_remove_post( $post_id, $blog_id = 0, $user_id = 0 ) {
 add_action( 'delete_post', 'bp_blogs_remove_post' );
 
 function bp_blogs_remove_comment( $comment_id ) {
-	global $wpdb, $bp;
+	global $wpdb;
 
 	// Delete activity stream item
 	bp_blogs_delete_activity( array( 'item_id' => $wpdb->blogid, 'secondary_item_id' => $comment_id, 'type' => 'new_blog_comment' ) );
@@ -496,9 +493,8 @@ function bp_blogs_total_blogs() {
 }
 
 function bp_blogs_total_blogs_for_user( $user_id = 0 ) {
-	global $bp;
 
-	if ( !$user_id )
+	if ( empty( $user_id ) )
 		$user_id = ( bp_displayed_user_id() ) ? bp_displayed_user_id() : bp_loggedin_user_id();
 
 	if ( !$count = wp_cache_get( 'bp_total_blogs_for_user_' . $user_id, 'bp' ) ) {
@@ -600,7 +596,7 @@ function bp_blogs_get_blogmeta( $blog_id, $meta_key = '') {
 			return '';
 	}
 
-	$metas = array_map('maybe_unserialize', (array)$metas);
+	$metas = array_map('maybe_unserialize', (array) $metas);
 
 	if ( 1 == count($metas) )
 		return $metas[0];
@@ -652,4 +648,5 @@ function bp_blogs_remove_data( $user_id ) {
 add_action( 'wpmu_delete_user',  'bp_blogs_remove_data' );
 add_action( 'delete_user',       'bp_blogs_remove_data' );
 add_action( 'bp_make_spam_user', 'bp_blogs_remove_data' );
+
 ?>

@@ -1,18 +1,22 @@
 <?php
+
+/**
+ * BuddyPress Messages Classes
+ *
+ * @package BuddyPress
+ * @subpackage MessagesClasses
+ */
+
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
-Class BP_Messages_Thread {
+class BP_Messages_Thread {
 	var $thread_id;
 	var $messages;
 	var $recipients;
 	var $sender_ids;
 
 	var $unread_count;
-
-	function bp_messages_thread ( $thread_id = false, $order = 'ASC' ) {
-		$this->__construct( $thread_id, $order);
-	}
 
 	function __construct( $thread_id = false, $order = 'ASC' ) {
 		if ( $thread_id )
@@ -31,7 +35,7 @@ Class BP_Messages_Thread {
 		if ( !$this->messages = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$bp->messages->table_name_messages} WHERE thread_id = %d ORDER BY date_sent " . $order, $this->thread_id ) ) )
 			return false;
 
-		foreach ( (array)$this->messages as $key => $message )
+		foreach ( (array) $this->messages as $key => $message )
 			$this->sender_ids[$message->sender_id] = $message->sender_id;
 
 		// Fetch the recipients
@@ -53,9 +57,10 @@ Class BP_Messages_Thread {
 	function get_recipients() {
 		global $wpdb, $bp;
 
-		$results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$bp->messages->table_name_recipients} WHERE thread_id = %d", $this->thread_id ) );
+		$recipients = array();
+		$results    = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$bp->messages->table_name_recipients} WHERE thread_id = %d", $this->thread_id ) );
 
-		foreach ( (array)$results as $recipient )
+		foreach ( (array) $results as $recipient )
 			$recipients[$recipient->user_id] = $recipient;
 
 		return $recipients;
@@ -107,16 +112,16 @@ Class BP_Messages_Thread {
 			return false;
 
 		// Sort threads by date_sent
-		foreach( (array)$thread_ids as $thread )
+		foreach( (array) $thread_ids as $thread )
 			$sorted_threads[$thread->thread_id] = strtotime( $thread->date_sent );
 
 		arsort( $sorted_threads );
 
 		$threads = false;
-		foreach ( (array)$sorted_threads as $thread_id => $date_sent )
+		foreach ( (array) $sorted_threads as $thread_id => $date_sent )
 			$threads[] = new BP_Messages_Thread( $thread_id );
 
-		return array( 'threads' => &$threads, 'total' => (int)$total_threads );
+		return array( 'threads' => &$threads, 'total' => (int) $total_threads );
 	}
 
 	function mark_as_read( $thread_id ) {
@@ -202,7 +207,9 @@ Class BP_Messages_Thread {
 		if ( count($recipients) >= 5 )
 			return count( $recipients ) . __(' Recipients', 'buddypress');
 
-		foreach ( (array)$recipients as $recipient )
+		$recipient_links = array();
+
+		foreach ( (array) $recipients as $recipient )
 			$recipient_links[] = bp_core_get_userlink( $recipient->user_id );
 
 		return implode( ', ', (array) $recipient_links );
@@ -221,7 +228,7 @@ Class BP_Messages_Thread {
 		if ( empty( $threads ) )
 			return true;
 
-		foreach( (array)$threads as $thread ) {
+		foreach( (array) $threads as $thread ) {
 			$message_ids = maybe_unserialize( $thread->message_ids );
 
 			if ( !empty( $message_ids ) ) {
@@ -240,7 +247,7 @@ Class BP_Messages_Thread {
 	}
 }
 
-Class BP_Messages_Message {
+class BP_Messages_Message {
 	var $id;
 	var $thread_id;
 	var $sender_id;
@@ -250,13 +257,7 @@ Class BP_Messages_Message {
 
 	var $recipients = false;
 
-	function bp_messages_message( $id = null ) {
-		$this->__construct( $id );
-	}
-
 	function __construct( $id = null ) {
-		global $bp;
-
 		$this->date_sent = bp_core_current_time();
 		$this->sender_id = bp_loggedin_user_id();
 
@@ -296,7 +297,7 @@ Class BP_Messages_Message {
 
 		// If we have no thread_id then this is the first message of a new thread.
 		if ( empty( $this->thread_id ) ) {
-			$this->thread_id = (int)$wpdb->get_var( $wpdb->prepare( "SELECT MAX(thread_id) FROM {$bp->messages->table_name_messages}" ) ) + 1;
+			$this->thread_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT MAX(thread_id) FROM {$bp->messages->table_name_messages}" ) ) + 1;
 			$new_thread = true;
 		}
 
@@ -308,7 +309,7 @@ Class BP_Messages_Message {
 
 		if ( $new_thread ) {
 			// Add an recipient entry for all recipients
-			foreach ( (array)$this->recipients as $recipient ) {
+			foreach ( (array) $this->recipients as $recipient ) {
 				$wpdb->query( $wpdb->prepare( "INSERT INTO {$bp->messages->table_name_recipients} ( user_id, thread_id, unread_count ) VALUES ( %d, %d, 1 )", $recipient->user_id, $this->thread_id ) );
 				$recipient_ids[] = $recipient->user_id;
 			}
@@ -343,8 +344,9 @@ Class BP_Messages_Message {
 
 		if ( is_array( $recipient_usernames ) ) {
 			for ( $i = 0, $count = count( $recipient_usernames ); $i < $count; ++$i ) {
-				if ( $rid = bp_core_get_userid( trim($recipient_usernames[$i]) ) )
+				if ( $rid = bp_core_get_userid( trim($recipient_usernames[$i]) ) ) {
 					$recipient_ids[] = $rid;
+				}
 			}
 		}
 
@@ -368,16 +370,12 @@ Class BP_Messages_Message {
 	}
 }
 
-Class BP_Messages_Notice {
+class BP_Messages_Notice {
 	var $id = null;
 	var $subject;
 	var $message;
 	var $date_sent;
 	var $is_active;
-
-	function bp_messages_notice( $id = null ) {
-		$this->__construct($id);
-	}
 
 	function __construct( $id = null ) {
 		if ( $id ) {
@@ -479,4 +477,5 @@ Class BP_Messages_Notice {
 		return new BP_Messages_Notice( $notice_id );
 	}
 }
+
 ?>

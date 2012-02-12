@@ -1,4 +1,5 @@
 <?php
+
 /***
  * AJAX Functions
  *
@@ -55,7 +56,7 @@ function bp_dtheme_ajax_querystring( $query_string, $object ) {
 		$qs[] = 'search_terms=' . $_POST['search_terms'];
 
 	/* Now pass the querystring to override default values. */
-	$query_string = empty( $qs ) ? '' : join( '&', (array)$qs );
+	$query_string = empty( $qs ) ? '' : join( '&', (array) $qs );
 
 	$object_filter = '';
 	if ( isset( $_BP_COOKIE['bp-' . $object . '-filter'] ) )
@@ -106,7 +107,6 @@ add_action( 'wp_ajax_forums_filter',  'bp_dtheme_object_template_loader' );
 
 // This function will load the activity loop template when activity is requested via AJAX
 function bp_dtheme_activity_template_loader() {
-	global $bp;
 
 	$scope = '';
 	if ( !empty( $_POST['scope'] ) )
@@ -115,16 +115,16 @@ function bp_dtheme_activity_template_loader() {
 	// We need to calculate and return the feed URL for each scope
 	switch ( $scope ) {
 		case 'friends':
-			$feed_url = $bp->loggedin_user->domain . bp_get_activity_slug() . '/friends/feed/';
+			$feed_url = bp_loggedin_user_domain() . bp_get_activity_slug() . '/friends/feed/';
 			break;
 		case 'groups':
-			$feed_url = $bp->loggedin_user->domain . bp_get_activity_slug() . '/groups/feed/';
+			$feed_url = bp_loggedin_user_domain() . bp_get_activity_slug() . '/groups/feed/';
 			break;
 		case 'favorites':
-			$feed_url = $bp->loggedin_user->domain . bp_get_activity_slug() . '/favorites/feed/';
+			$feed_url = bp_loggedin_user_domain() . bp_get_activity_slug() . '/favorites/feed/';
 			break;
 		case 'mentions':
-			$feed_url = $bp->loggedin_user->domain . bp_get_activity_slug() . '/mentions/feed/';
+			$feed_url = bp_loggedin_user_domain() . bp_get_activity_slug() . '/mentions/feed/';
 			bp_activity_clear_new_mentions( bp_loggedin_user_id() );
 			break;
 		default:
@@ -146,7 +146,6 @@ add_action( 'wp_ajax_activity_get_older_updates', 'bp_dtheme_activity_template_l
 
 /* AJAX update posting */
 function bp_dtheme_post_update() {
-	global $bp;
 
 	// Check the nonce
 	check_admin_referer( 'post_update', '_wpnonce_post_update' );
@@ -188,7 +187,6 @@ add_action( 'wp_ajax_post_update', 'bp_dtheme_post_update' );
 
 /* AJAX activity comment posting */
 function bp_dtheme_new_activity_comment() {
-	global $bp;
 
 	// Check the nonce
 	check_admin_referer( 'new_activity_comment', '_wpnonce_new_activity_comment' );
@@ -245,7 +243,6 @@ add_action( 'wp_ajax_new_activity_comment', 'bp_dtheme_new_activity_comment' );
 
 /* AJAX delete an activity */
 function bp_dtheme_delete_activity() {
-	global $bp;
 
 	// Check the nonce
 	check_admin_referer( 'bp_activity_delete_link' );
@@ -284,9 +281,8 @@ add_action( 'wp_ajax_delete_activity', 'bp_dtheme_delete_activity' );
 
 /* AJAX delete an activity comment */
 function bp_dtheme_delete_activity_comment() {
-	global $bp;
 
-	/* Check the nonce */
+	// Check the nonce
 	check_admin_referer( 'bp_activity_delete_link' );
 
 	if ( !is_user_logged_in() ) {
@@ -367,7 +363,6 @@ add_action( 'wp_ajax_spam_activity_comment', 'bp_dtheme_spam_activity' );
 
 /* AJAX mark an activity as a favorite */
 function bp_dtheme_mark_activity_favorite() {
-	global $bp;
 
 	bp_activity_add_user_favorite( $_POST['id'] );
 	_e( 'Remove Favorite', 'buddypress' );
@@ -376,7 +371,6 @@ add_action( 'wp_ajax_activity_mark_fav', 'bp_dtheme_mark_activity_favorite' );
 
 /* AJAX mark an activity as not a favorite */
 function bp_dtheme_unmark_activity_favorite() {
-	global $bp;
 
 	bp_activity_remove_user_favorite( $_POST['id'] );
 	_e( 'Favorite', 'buddypress' );
@@ -413,7 +407,6 @@ add_action( 'wp_ajax_get_single_activity_content', 'bp_dtheme_get_single_activit
 
 /* AJAX invite a friend to a group functionality */
 function bp_dtheme_ajax_invite_user() {
-	global $bp;
 
 	check_ajax_referer( 'groups_invite_uninvite_user' );
 
@@ -438,7 +431,7 @@ function bp_dtheme_ajax_invite_user() {
 		echo '<h4>' . $user->user_link . '</h4>';
 		echo '<span class="activity">' . esc_attr( $user->last_active ) . '</span>';
 		echo '<div class="action">
-				<a class="button remove" href="' . wp_nonce_url( $bp->loggedin_user->domain . bp_get_groups_slug() . '/' . $_POST['group_id'] . '/invites/remove/' . $user->id, 'groups_invite_uninvite_user' ) . '" id="uid-' . esc_attr( $user->id ) . '">' . __( 'Remove Invite', 'buddypress' ) . '</a>
+				<a class="button remove" href="' . wp_nonce_url( bp_loggedin_user_domain() . bp_get_groups_slug() . '/' . $_POST['group_id'] . '/invites/remove/' . $user->id, 'groups_invite_uninvite_user' ) . '" id="uid-' . esc_attr( $user->id ) . '">' . __( 'Remove Invite', 'buddypress' ) . '</a>
 			  </div>';
 		echo '</li>';
 
@@ -457,7 +450,6 @@ add_action( 'wp_ajax_groups_invite_user', 'bp_dtheme_ajax_invite_user' );
 
 /* AJAX add/remove a user as a friend when clicking the button */
 function bp_dtheme_ajax_addremove_friend() {
-	global $bp;
 
 	if ( 'is_friend' == BP_Friends_Friendship::check_is_friend( bp_loggedin_user_id(), $_POST['fid'] ) ) {
 
@@ -466,7 +458,7 @@ function bp_dtheme_ajax_addremove_friend() {
 		if ( !friends_remove_friend( bp_loggedin_user_id(), $_POST['fid'] ) ) {
 			echo __("Friendship could not be canceled.", 'buddypress');
 		} else {
-			echo '<a id="friend-' . $_POST['fid'] . '" class="add" rel="add" title="' . __( 'Add Friend', 'buddypress' ) . '" href="' . wp_nonce_url( $bp->loggedin_user->domain . bp_get_friends_slug() . '/add-friend/' . $_POST['fid'], 'friends_add_friend' ) . '">' . __( 'Add Friend', 'buddypress' ) . '</a>';
+			echo '<a id="friend-' . $_POST['fid'] . '" class="add" rel="add" title="' . __( 'Add Friend', 'buddypress' ) . '" href="' . wp_nonce_url( bp_loggedin_user_domain() . bp_get_friends_slug() . '/add-friend/' . $_POST['fid'], 'friends_add_friend' ) . '">' . __( 'Add Friend', 'buddypress' ) . '</a>';
 		}
 
 	} else if ( 'not_friends' == BP_Friends_Friendship::check_is_friend( bp_loggedin_user_id(), $_POST['fid'] ) ) {
@@ -476,7 +468,7 @@ function bp_dtheme_ajax_addremove_friend() {
 		if ( !friends_add_friend( bp_loggedin_user_id(), $_POST['fid'] ) ) {
 			echo __("Friendship could not be requested.", 'buddypress');
 		} else {
-			echo '<a href="' . $bp->loggedin_user->domain . bp_get_friends_slug() . '/requests" class="requested">' . __( 'Friendship Requested', 'buddypress' ) . '</a>';
+			echo '<a href="' . bp_loggedin_user_domain() . bp_get_friends_slug() . '/requests" class="requested">' . __( 'Friendship Requested', 'buddypress' ) . '</a>';
 		}
 	} else {
 		echo __( 'Request Pending', 'buddypress' );
@@ -510,7 +502,6 @@ add_action( 'wp_ajax_reject_friendship', 'bp_dtheme_ajax_reject_friendship' );
 
 /* AJAX join or leave a group when clicking the "join/leave" button */
 function bp_dtheme_ajax_joinleave_group() {
-	global $bp;
 
 	if ( groups_is_user_banned( bp_loggedin_user_id(), $_POST['gid'] ) )
 		return false;
@@ -588,7 +579,7 @@ function bp_dtheme_ajax_messages_send_reply() {
 				<?php do_action( 'bp_before_message_meta' ) ?>
 				<?php echo bp_loggedin_user_avatar( 'type=thumb&width=30&height=30' ); ?>
 
-				<strong><a href="<?php echo $bp->loggedin_user->domain ?>"><?php echo $bp->loggedin_user->fullname ?></a> <span class="activity"><?php printf( __( 'Sent %s', 'buddypress' ), bp_core_time_since( bp_core_current_time() ) ) ?></span></strong>
+				<strong><a href="<?php echo bp_loggedin_user_domain() ?>"><?php echo $bp->loggedin_user->fullname ?></a> <span class="activity"><?php printf( __( 'Sent %s', 'buddypress' ), bp_core_time_since( bp_core_current_time() ) ) ?></span></strong>
 
 				<?php do_action( 'bp_after_message_meta' ) ?>
 			</div>
@@ -612,7 +603,6 @@ add_action( 'wp_ajax_messages_send_reply', 'bp_dtheme_ajax_messages_send_reply' 
 
 /* AJAX mark a private message as unread in your inbox */
 function bp_dtheme_ajax_message_markunread() {
-	global $bp;
 
 	if ( !isset($_POST['thread_ids']) ) {
 		echo "-1<div id='message' class='error'><p>" . __('There was a problem marking messages as unread.', 'buddypress' ) . '</p></div>';
@@ -628,7 +618,6 @@ add_action( 'wp_ajax_messages_markunread', 'bp_dtheme_ajax_message_markunread' )
 
 /* AJAX mark a private message as read in your inbox */
 function bp_dtheme_ajax_message_markread() {
-	global $bp;
 
 	if ( !isset($_POST['thread_ids']) ) {
 		echo "-1<div id='message' class='error'><p>" . __('There was a problem marking messages as read.', 'buddypress' ) . '</p></div>';
@@ -644,7 +633,6 @@ add_action( 'wp_ajax_messages_markread', 'bp_dtheme_ajax_message_markread' );
 
 /* AJAX delete a private message or array of messages in your inbox */
 function bp_dtheme_ajax_messages_delete() {
-	global $bp;
 
 	if ( !isset($_POST['thread_ids']) ) {
 		echo "-1<div id='message' class='error'><p>" . __( 'There was a problem deleting messages.', 'buddypress' ) . '</p></div>';
@@ -671,10 +659,9 @@ function bp_dtheme_ajax_messages_autocomplete_results() {
 	global $bp;
 
 	// Include everyone in the autocomplete, or just friends?
-	if ( $bp->messages->slug == $bp->current_component )
+	if ( bp_is_current_component( bp_get_messages_slug() ) )
 		$autocomplete_all = $bp->messages->autocomplete_all;
 
-	$friends  = false;
 	$pag_page = 1;
 
 	$limit = $_GET['limit'] ? $_GET['limit'] : apply_filters( 'bp_autocomplete_max_results', 10 );

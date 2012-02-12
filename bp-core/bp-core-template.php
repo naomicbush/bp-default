@@ -1,4 +1,5 @@
 <?php
+
 // Exit if accessed directly
 if ( !defined( 'ABSPATH' ) ) exit;
 
@@ -38,7 +39,7 @@ function bp_get_options_nav() {
 	}
 
 	// Loop through each navigation item
-	foreach ( (array)$bp->bp_options_nav[$the_index] as $subnav_item ) {
+	foreach ( (array) $bp->bp_options_nav[$the_index] as $subnav_item ) {
 		if ( !$subnav_item['user_has_access'] )
 			continue;
 
@@ -205,23 +206,25 @@ function bp_format_time( $time, $just_date = false, $localize_time = true ) {
 }
 
 function bp_word_or_name( $youtext, $nametext, $capitalize = true, $echo = true ) {
-	global $bp;
 
-	if ( $capitalize )
-		$youtext = bp_core_ucfirst($youtext);
+	if ( !empty( $capitalize ) )
+		$youtext = bp_core_ucfirst( $youtext );
 
 	if ( bp_displayed_user_id() == bp_loggedin_user_id() ) {
-		if ( $echo )
+		if ( true == $echo ) {
 			echo apply_filters( 'bp_word_or_name', $youtext );
-		else
+		} else {
 			return apply_filters( 'bp_word_or_name', $youtext );
+		}
 	} else {
-		$fullname = (array)explode( ' ', $bp->displayed_user->fullname );
+		$fullname = bp_get_displayed_user_fullname();
+		$fullname = (array) explode( ' ', $fullname );
 		$nametext = sprintf( $nametext, $fullname[0] );
-		if ( $echo )
+		if ( true == $echo ) {
 			echo apply_filters( 'bp_word_or_name', $nametext );
-		else
+		} else {
 			return apply_filters( 'bp_word_or_name', $nametext );
+		}
 	}
 }
 
@@ -243,12 +246,10 @@ function bp_search_form_action() {
 /**
  * Generates the basic search form as used in BP-Default's header.
  *
- * @global object $bp BuddyPress global settings
  * @return string HTML <select> element
  * @since 1.0
  */
 function bp_search_form_type_select() {
-	global $bp;
 
 	$options = array();
 
@@ -271,7 +272,7 @@ function bp_search_form_type_select() {
 	$selection_box .= '<select name="search-which" id="search-which" style="width: auto">';
 
 	$options = apply_filters( 'bp_search_form_type_select_options', $options );
-	foreach( (array)$options as $option_value => $option_title )
+	foreach( (array) $options as $option_value => $option_title )
 		$selection_box .= sprintf( '<option value="%s">%s</option>', $option_value, $option_title );
 
 	$selection_box .= '</select>';
@@ -405,12 +406,12 @@ function bp_create_excerpt( $text, $length = 225, $options = array() ) {
 	$ending = apply_filters( 'bp_excerpt_append_text', $ending );
 
 	// Remove shortcodes if necessary
-	if ( $filter_shortcodes )
+	if ( !empty( $filter_shortcodes ) )
 		$text = strip_shortcodes( $text );
 
 	// When $html is true, the excerpt should be created without including HTML tags in the
 	// excerpt length
-	if ( $html ) {
+	if ( !empty( $html ) ) {
 		// The text is short enough. No need to truncate
 		if ( mb_strlen( preg_replace( '/<.*?>/', '', $text ) ) <= $length ) {
 			return $text;
@@ -470,7 +471,7 @@ function bp_create_excerpt( $text, $length = 225, $options = array() ) {
 	}
 
 	// If $exact is false, we can't break on words
-	if ( !$exact ) {
+	if ( empty( $exact ) ) {
 		$spacepos = mb_strrpos( $truncate, ' ' );
 		if ( isset( $spacepos ) ) {
 			if ( $html ) {
@@ -980,7 +981,6 @@ function bp_is_component_front_page( $component = '' ) {
  * @return bool True if it's a non-BP page, false otherwise
  */
 function bp_is_blog_page() {
-	global $wp_query;
 
 	$is_blog_page = false;
 
@@ -1091,8 +1091,6 @@ function bp_is_single_activity() {
 /** User **********************************************************************/
 
 function bp_is_my_profile() {
-	global $bp;
-
 	if ( is_user_logged_in() && bp_loggedin_user_id() == bp_displayed_user_id() )
 		$my_profile = true;
 	else
@@ -1102,8 +1100,6 @@ function bp_is_my_profile() {
 }
 
 function bp_is_user() {
-	global $bp;
-
 	if ( bp_displayed_user_id() )
 		return true;
 

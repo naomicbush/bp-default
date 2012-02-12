@@ -182,12 +182,9 @@ function bp_core_admin_slugs_options() {
  *
  * @since BuddyPress (1.6)
  * @todo Use settings API
- * @global WPDB $wpdb
- * @global BuddyPress $bp
- * @return type
+ * @return False if referer does not check out
  */
 function bp_core_admin_slugs_setup_handler() {
-	global $wpdb, $bp;
 
 	if ( isset( $_POST['bp-admin-pages-submit'] ) || isset( $_POST['bp-admin-pages-single'] ) ) {
 		if ( !check_admin_referer( 'bp-admin-pages-setup' ) )
@@ -198,9 +195,9 @@ function bp_core_admin_slugs_setup_handler() {
 
 			$directory_pages = array();
 
-			foreach ( (array)$_POST['bp_pages'] as $key => $value ) {
+			foreach ( (array) $_POST['bp_pages'] as $key => $value ) {
 				if ( !empty( $value ) ) {
-					$directory_pages[$key] = (int)$value;
+					$directory_pages[$key] = (int) $value;
 				}
 			}
 			bp_core_update_directory_page_ids( $directory_pages );
